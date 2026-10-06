@@ -6,7 +6,7 @@ Reglas permanentes del proyecto. Todos los agentes y desarrolladores deben leerl
 
 ## 1. Proyecto
 
-- **Glowe Beauty** — e-commerce de maquillaje y cuidado capilar (Colombia, COP).
+- **Glowe Beauty** — tienda e-commerce comercializadora y distribuidora multimarca de maquillaje y cuidado capilar (Colombia, COP). Vende productos 100% originales de marcas aliadas reconocidas (Trendy, Montoc, Ame, Olaplex, L'Oréal, Maybelline, etc.); no es fabricante ni laboratorio propio.
 - El código fuente de la app vive en `Frontend/`. El repositorio puede crecer a futuro con backend, base de datos y panel administrativo.
 - **Prioridad 1: experiencia del cliente / frontend.** Toda decisión técnica debe proteger: velocidad de carga, claridad visual, responsive y flujo de compra simple (catálogo → carrito → pedido por WhatsApp).
 - La estrategia por fases está documentada en `docs/ROADMAP.md`. Trabaja solo dentro de la fase activa solicitada.

@@ -14,7 +14,7 @@ const microCards = [
       <>
         <div className="w-8 h-8 rounded-full bg-glowe-yellow flex items-center justify-center text-sm shadow-inner">⭐</div>
         <div>
-          <span className="block text-xs font-bold text-glowe-dark">#1 Best Seller</span>
+          <span className="block text-xs font-bold text-glowe-dark">El más vendido</span>
           <span className="block text-[10px] text-glowe-muted">Brillo Labial HydraGlow</span>
         </div>
       </>
@@ -68,8 +68,8 @@ export default function HeroSection() {
           <div className="lg:col-span-7 text-center lg:text-left space-y-6">
             <div data-hero-item className="inline-flex max-w-full flex-wrap items-center justify-center gap-x-2 gap-y-1 rounded-full border border-glowe-pink/50 px-4 py-2 text-xs font-semibold text-glowe-dark glass-panel">
               <span className="w-2 h-2 rounded-full bg-glowe-pink-accent animate-ping" />
-              <span className="text-glowe-pink-accent font-bold">✨ Nueva Colección 2026</span>
-              <span className="text-glowe-muted">| Maquillaje & Care</span>
+              <span className="text-glowe-pink-accent font-bold">✨ Tienda Multimarca 2026</span>
+              <span className="text-glowe-muted">| Curaduría & Care</span>
             </div>
 
             <h1 data-hero-item className="font-serif text-3xl font-bold leading-[1.15] tracking-tight text-glowe-dark min-[380px]:text-4xl sm:text-5xl lg:text-6xl">
@@ -87,8 +87,7 @@ export default function HeroSection() {
             </h1>
 
             <p data-hero-item className="text-base sm:text-lg text-glowe-muted max-w-xl mx-auto lg:mx-0 font-normal leading-relaxed">
-              Maquillaje y cuidado capilar diseñados para hacerte brillar todos los días. Productos
-              accesibles, auténticos y fáciles de amar.
+              Tu tienda multimarca de belleza y cuidado capilar en Colombia. Seleccionamos y distribuimos las mejores marcas del mercado para que brilles todos los días con productos 100% originales y de alta calidad.
             </p>
 
             <div data-hero-item className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
@@ -112,13 +111,13 @@ export default function HeroSection() {
 
             <div data-hero-item className="pt-8 flex flex-wrap items-center justify-center lg:justify-start gap-6 text-xs font-semibold text-glowe-muted">
               <div className="flex items-center gap-1.5">
-                <span className="text-glowe-pink-accent text-base">🌸</span> 100% Cruelty Free
+                <span className="text-glowe-pink-accent text-base">🌸</span> +10 Usuari@s Felices
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-glowe-yellow-accent text-base">⚡</span> Envíos Rápidos Colombia
+                <span className="text-glowe-yellow-accent text-base">⚡</span> Envíos a Toda Colombia
               </div>
               <div className="flex items-center gap-1.5">
-                <span className="text-glowe-blue-accent text-base">💖</span> +10k Usuarias Felices
+                <span className="text-glowe-blue-accent text-base">💬</span> Asesoría por WhatsApp
               </div>
             </div>
           </div>

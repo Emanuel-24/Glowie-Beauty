@@ -7,7 +7,7 @@
 
 ## 1. Resumen Ejecutivo
 
-**Glowe Beauty** es un e-commerce de maquillaje y cuidado capilar para Colombia (moneda COP), con panel administrativo.
+**Glowe Beauty** es una tienda e-commerce comercializadora y distribuidora multimarca (retailer) de productos de belleza, maquillaje y cuidado capilar para Colombia (moneda COP), con panel administrativo.
 
 ```
 Glowe Beauty/
@@ -175,6 +175,15 @@ Glowe Beauty/
   1. **Suite de pruebas nativa:** Implementada en `Backend/tests/integration.test.js` utilizando `node:test` y `node:assert/strict` de Node.js v22 (0 dependencias añadidas). Valida sanitización de credenciales y roles (ADR-007), normalización de catálogo y stock on-demand (ADR-009, ADR-010), cálculo de balance en órdenes y métodos de pago (ADR-008, ADR-011) y categorías.
   2. **Skill `glowe-maintenance`:** Creada en `.agents/skills/glowe-maintenance/SKILL.md` y registrada en `skills-lock.json`, encapsulando el gatekeeper de verificación continua (`pnpm check` en Frontend y Backend, `pnpm test:unit`).
   3. **Cierre de Roadmap:** Se alcanza el 100% de objetivos técnicos y de arquitectura previstos.
+
+### ADR-016: Modelo de Negocio Comercializador y Distribuidor Multimarca (Retailer)
+- **Fecha:** 05/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Se detectaron conceptos equívocos que asociaban la marca a un fabricante. Glowe Beauty opera como tienda e-commerce comercializadora y distribuidora de marcas aliadas reconocidas de belleza, maquillaje y cuidado capilar.
+- **Decisión:**
+  1. **Posicionamiento comercial:** Retailer multimarca de cosméticos 100% originales (Trendy, Montoc, Ame, Olaplex, L'Oréal, Maybelline, etc.).
+  2. **Modelado de datos:** Inclusión del campo `brand` (String, default: 'Glowe Select', trim: true) en esquema `Product.js`, normalizadores de backend y seeds.
+  3. **Frontend y UX:** Soporte de `brand` en `ProductCard.jsx`, `Producto.jsx` (con badge de autenticidad y distribución autorizada), `productService.js` y panel administrativo `Admin.jsx`.
+  4. **Propuesta de valor:** Copy optimizado para resaltar curaduría de marcas, garantía de originalidad, cobertura de envíos en Colombia y asesoría por WhatsApp.
 
 ---
 

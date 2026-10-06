@@ -57,6 +57,7 @@ describe('Suite de Integración y Servicios Críticos - Backend Glowe Beauty', (
 
       assert.equal(normalized.id, 'prod123');
       assert.equal(normalized.name, 'Labial Matte Rose');
+      assert.equal(normalized.brand, 'Glowe Select', 'Debe asignar marca por defecto');
       assert.equal(normalized.price, 35000);
       assert.equal(normalized.images.length, 2, 'Debe preservar el arreglo de imágenes');
       assert.equal(normalized.image, 'https://glowe.com/img1.jpg', 'Debe asignar la primera imagen como portada');

@@ -14,14 +14,14 @@ export default function EditorialMakeup() {
         <div className="flex flex-col lg:flex-row items-center justify-between gap-8 mb-10">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-glowe-pink-accent">
-              Colección de Maquillaje
+              Curaduría de Maquillaje
             </span>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-glowe-dark">
-              Makeup para cada versión de ti 💄
+              Makeup de las mejores marcas para ti 💄
             </h2>
           </div>
           <p className="text-sm text-glowe-muted max-w-md">
-            Tonos versátiles, texturas ligeras y fórmulas pensadas para acompañar tu estilo natural todo el día.
+            Seleccionamos y distribuimos las mejores marcas de cosméticos con tonos versátiles, texturas ligeras y acabados diseñados para acompañar tu estilo.
           </p>
         </div>
 

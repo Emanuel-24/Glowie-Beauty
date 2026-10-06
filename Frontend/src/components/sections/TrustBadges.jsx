@@ -1,8 +1,8 @@
 const badges = [
   { icon: '🚚', title: 'Envíos a Toda Colombia', sub: 'Rápidos y seguros a tu puerta.' },
-  { icon: '💳', title: 'Compra Fácil & Segura', sub: 'Todos los medios de pago.' },
-  { icon: '💗', title: 'Productos Seleccionados', sub: 'Calidad aprobada por expertas.' },
-  { icon: '✨', title: 'Atención Cercana', sub: 'Te asesoramos por WhatsApp.' },
+  { icon: '🏷️', title: '100% Originales & Multimarca', sub: 'Garantía en todas las marcas aliadas.' },
+  { icon: '💗', title: 'Curaduría Experta', sub: 'Selección de los mejores productos del mercado.' },
+  { icon: '✨', title: 'Asesoría por WhatsApp', sub: 'Te ayudamos a elegir el producto ideal.' },
 ]
 
 export default function TrustBadges() {

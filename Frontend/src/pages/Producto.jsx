@@ -29,6 +29,7 @@ const normalizeProduct = (rawProduct) => {
     _id: rawProduct._id ?? id ?? null,
     name: rawProduct.name ?? rawProduct.title ?? 'Producto Glowe',
     title: rawProduct.title ?? rawProduct.name ?? 'Producto Glowe',
+    brand: rawProduct.brand || 'Glowe Select',
     category: rawProduct.category ?? 'maquillaje',
     image,
     images: images.length > 0 ? images : image ? [image] : [],
@@ -330,7 +331,13 @@ export default function Producto() {
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-glowe-dark">{product.name}</h1>
 
             <div className="flex items-center gap-2 flex-wrap">
+              <Badge tone="white" className="border border-glowe-pink-accent/30 font-bold text-glowe-dark">
+                Marca: {product.brand || 'Glowe Select'}
+              </Badge>
               <Badge tone="gold">{categoryOptionLabel(product.category)}</Badge>
+              <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                ✓ 100% Original · Distribuido por Glowe Beauty
+              </span>
             </div>
 
             {product.tags && product.tags.length > 0 && (

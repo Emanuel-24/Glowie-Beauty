@@ -73,6 +73,7 @@ const defaultPurchases = [
 
 const emptyProductForm = {
   name: '',
+  brand: 'Glowe Select',
   category: 'maquillaje',
   price: '',
   stock: '12',
@@ -143,6 +144,7 @@ export default function Admin() {
             items.value.map((item, index) => ({
               id: item.id ?? item._id ?? index + 1,
               name: item.name || `Producto ${index + 1}`,
+              brand: item.brand || 'Glowe Select',
               category: item.category || 'maquillaje',
               price: Number(item.price ?? 0),
               stock: Number(item.stock ?? 0),
@@ -313,6 +315,7 @@ export default function Admin() {
         number: String(index + 1).padStart(2, '0'),
         image: product.image,
         name: product.name,
+        brand: product.brand || 'Glowe Select',
         category: product.category,
         price: formatCOP(product.price),
         priceValue: Number(product.price || 0),
@@ -394,7 +397,7 @@ const orderRows = useMemo(
   const productColumns = [
     { key: 'number', header: '#', className: 'w-16', render: (row) => <span className="font-bold text-glowe-muted">{row.number}</span> },
     { key: 'image', header: 'Imagen', render: (row) => <img src={row.image} alt={row.name} className="h-12 w-12 rounded-xl object-cover ring-1 ring-glowe-pink/20" loading="lazy" /> },
-    { key: 'name', header: 'Nombre', render: (row) => <div><p className="font-semibold text-glowe-dark">{row.name}</p><p className="text-[10px] uppercase tracking-[0.14em] text-glowe-muted">{row.badge}</p></div> },
+    { key: 'name', header: 'Nombre & Marca', render: (row) => <div><p className="font-semibold text-glowe-dark">{row.name}</p><p className="text-[10px] uppercase tracking-[0.14em] text-glowe-pink-accent font-bold">{row.brand || 'Glowe Select'} • <span className="text-glowe-muted">{row.badge}</span></p></div> },
     { key: 'category', header: 'Categoría', render: (row) => <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-glowe-muted">{row.category}</span> },
     { key: 'price', header: 'Precio', render: (row) => <span className="font-bold text-glowe-dark">{row.price}</span> },
     { key: 'stock', header: 'Stock', render: (row) => <StatusBadge label={row.stockLabel} tone={row.stockTone} /> },
@@ -502,6 +505,7 @@ const orderRows = useMemo(
       setEditingProductId(product.id)
       setProductForm({
         name: product.name || '',
+        brand: product.brand || 'Glowe Select',
         category: product.category || 'maquillaje',
         price: String(product.priceValue ?? product.price ?? ''),
         stock: String(product.stock ?? 12),
@@ -807,6 +811,7 @@ const orderRows = useMemo(
     const payload = {
       id: editingProductId ?? Date.now(),
       name: productForm.name.trim() || 'Nuevo producto',
+      brand: (productForm.brand || 'Glowe Select').trim(),
       category: productForm.category,
       price: Number(productForm.price) || 0,
       stock: Number(productForm.stock) || 0,
@@ -1123,6 +1128,10 @@ const orderRows = useMemo(
             <div className="md:col-span-2">
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">Nombre</label>
               <Input name="name" value={productForm.name} onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="Nombre del producto" className="w-full" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">Marca</label>
+              <Input name="brand" value={productForm.brand} onChange={(event) => setProductForm((prev) => ({ ...prev, brand: event.target.value }))} placeholder="Ej: Trendy, Montoc, Ame..." className="w-full" />
             </div>
             <div>
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">Categoría</label>

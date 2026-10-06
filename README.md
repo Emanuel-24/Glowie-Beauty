@@ -1,4 +1,4 @@
-# Glowe Beauty — E-commerce de Belleza, Maquillaje y Cuidado Capilar
+  # Glowe Beauty — E-commerce de Belleza, Maquillaje y Cuidado Capilar
 
 [![Node.js](https://img.shields.io/badge/Node.js-v22+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
@@ -14,6 +14,7 @@
 
 ## 🌟 Características Principales
 
+- 🏷️ **Modelo Retailer / Comercializador Multimarca:** Tienda e-commerce dedicada a la comercialización y distribución de cosméticos y cuidado capilar 100% originales de diversas marcas aliadas (Trendy, Montoc, Ame, Olaplex, L'Oréal, Maybelline, etc.), integrando el atributo de marca (`brand`) en base de datos, panel de administración y fichas de producto.
 - 📲 **Checkout Asistido con Redirección a WhatsApp:** Creación inmediata de orden en base de datos (`Pendiente` / `Sin pagos`) con generación de ID único y redirección automática a WhatsApp con mensaje preformateado (desglose de ítems, totales y método de pago).
 - 🔐 **Autenticación Obligatoria con Sincronización de Carrito (*Merge Strategy*):** Los visitantes pueden explorar y agregar productos libremente (almacenamiento en `localStorage`). Para finalizar la compra es mandatorio iniciar sesión o registrarse, momento en el cual el sistema sincroniza automáticamente el carrito local con el de la base de datos.
 - 📦 **Modelo de Ventas Bajo Pedido (*On-Demand*):** Catálogo configurado sin bloqueos por saldo de stock cero, garantizando disponibilidad continua y ocultando contadores numéricos al cliente final.
@@ -201,6 +202,7 @@ El desarrollo del proyecto está respaldado por 15 decisiones arquitectónicas d
 | **ADR-013** | **Scripts Autónomos y Reducción de Ruido:** Limpieza contextual vía `.gitignore` y comandos `check`, `lint` y `test:unit`. |
 | **ADR-014** | **SEO Dinámico y Accesibilidad WCAG:** `usePageMeta`, robots/sitemap, navegación accesible por teclado y lazy loading. |
 | **ADR-015** | **Suite de Pruebas Nativas y Mantenimiento:** Pruebas con `node:test` y skill `.agents/skills/glowe-maintenance/`. |
+| **ADR-016** | **Modelo Comercializador / Distribuidor Multimarca:** Definición formal de Glowe Beauty como e-commerce comercializador y distribuidor multimarca, con modelado del campo `brand` en backend, semillas y frontend. |
 
 ---
 

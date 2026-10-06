@@ -51,8 +51,7 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-xs text-glowe-muted leading-relaxed">
-              Tu belleza, tu estilo, tu Glowe. Productos creados para hacerte brillar todos los días con
-              autenticidad y frescura.
+              Tu belleza, tu estilo, tu Glowe. Tienda multimarca de belleza y cuidado capilar. Distribuimos las mejores marcas para hacerte brillar todos los días con productos 100% originales.
             </p>
           </div>
 

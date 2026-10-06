@@ -12,6 +12,11 @@ const productSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    brand: {
+      type: String,
+      trim: true,
+      default: 'Glowe Select',
+    },
     price: {
       type: Number,
       required: true,

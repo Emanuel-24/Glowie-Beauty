@@ -101,9 +101,14 @@ export default function ProductCard({ product }) {
 
       <div className="flex flex-1 min-w-0 flex-col">
         <div className="space-y-1.5">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-glowe-pink-accent">
-            {product.category}
-          </span>
+          <div className="flex items-center justify-between gap-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-glowe-pink-accent">
+              {product.category}
+            </span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-glowe-dark/70 bg-white/80 px-2 py-0.5 rounded-full border border-glowe-pink/20 shadow-xs">
+              {product.brand || 'Glowe Select'}
+            </span>
+          </div>
 
           <h3 className="font-bold text-glowe-dark text-xs sm:text-sm line-clamp-1 group-hover:text-glowe-pink-accent transition-colors">
             {product.name}

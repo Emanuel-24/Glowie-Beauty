@@ -16,8 +16,7 @@ export default function HairCareSection() {
               </Badge>
               <h2 className="font-serif text-3xl font-bold text-glowe-dark">Dale amor a tu cabello 💇‍♀️</h2>
               <p className="text-xs sm:text-sm text-glowe-muted leading-relaxed">
-                Formulaciones enriquecidas con aceites naturales de Argán, Coco y Seda para reparar, hidratar
-                y darle un brillo espejo sin frizz.
+                Tratamientos y productos seleccionados de las mejores marcas capilares, enriquecidos con aceites de Argán, Coco y Seda para reparar, hidratar y darle brillo espejo sin frizz.
               </p>
               <div className="pt-2 space-y-2 text-xs font-semibold text-glowe-dark">
                 <div className="flex items-center gap-2">✓ Sin Sulfatos ni Parabenos</div>

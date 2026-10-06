@@ -2,6 +2,7 @@ export const products = [
   {
     id: 1,
     name: 'Brillo Labial HydraGlow Tint',
+    brand: 'Trendy',
     category: 'maquillaje',
     tags: ['natural', 'radiante', 'renovar'],
     price: 38000,
@@ -10,11 +11,12 @@ export const products = [
     badge: 'Best Seller ✨',
     image:
       'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=80',
-    desc: 'Hidratación profunda con color rosa natural de larga duración.',
+    desc: 'Producto 100% original Trendy distribuido por Glowe Beauty. Hidratación profunda con color rosa natural.',
   },
   {
     id: 2,
     name: 'Sérum Capilar Argan & Seda',
+    brand: 'Olaplex',
     category: 'cabello',
     tags: ['cabello', 'radiante'],
     price: 52000,
@@ -23,11 +25,12 @@ export const products = [
     badge: 'Top Rated 🩵',
     image:
       'https://placehold.co/600x600/E0F7FA/1B9AAA?text=Serum+Argan',
-    desc: 'Control antifrizz inmediato con toque de seda y aroma fresco.',
+    desc: 'Garantía de originalidad Glowe Beauty. Control antifrizz inmediato con toque de seda y aroma fresco.',
   },
   {
     id: 3,
     name: 'Paleta Rubor & Iluminador SunKissed',
+    brand: 'Montoc',
     category: 'maquillaje',
     tags: ['radiante', 'renovar', 'regalo'],
     price: 44000,
@@ -36,11 +39,12 @@ export const products = [
     badge: 'Nuevo 💛',
     image:
       'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80',
-    desc: 'Pigmentación sedosa con acabado luminoso y natural.',
+    desc: 'Original Montoc comercializado por Glowe Beauty. Pigmentación sedosa con acabado luminoso y natural.',
   },
   {
     id: 4,
     name: 'Mascarilla Reparación Nocturna HairCare',
+    brand: 'Kaba',
     category: 'cabello',
     tags: ['cabello', 'economico'],
     price: 42000,
@@ -49,11 +53,12 @@ export const products = [
     badge: 'Favorito 🌸',
     image:
       'https://images.unsplash.com/photo-1526947425960-945c6e72858f?auto=format&fit=crop&w=600&q=80',
-    desc: 'Nutrición intensa mientras duermes para un cabello suave.',
+    desc: 'Tratamiento original Kaba seleccionado por Glowe Beauty. Nutrición intensa mientras duermes.',
   },
   {
     id: 5,
     name: 'Tinta de Labios y Mejillas Everyday Pink',
+    brand: 'Ame Cosméticos',
     category: 'maquillaje',
     tags: ['natural', 'economico'],
     price: 32000,
@@ -62,11 +67,12 @@ export const products = [
     badge: 'Económico 🏷️',
     image:
       'https://images.unsplash.com/photo-1571781926291-c477ebfd024b?auto=format&fit=crop&w=600&q=80',
-    desc: 'Doble uso para un look fresco en 2 minutos.',
+    desc: 'Producto original de Ame Cosméticos distribuido por Glowe Beauty. Doble uso para un look fresco.',
   },
   {
     id: 6,
     name: 'Kit Glow Starter Beauty Box',
+    brand: 'Glowe Select',
     category: 'maquillaje',
     tags: ['regalo', 'radiante', 'renovar'],
     price: 89000,
@@ -75,11 +81,12 @@ export const products = [
     badge: 'Kit Regalo 🎁',
     image:
       'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=600&q=80',
-    desc: 'Incluye brillo labial, rubor líquido y cosmetiquera pastel.',
+    desc: 'Curaduría exclusiva Glowe Beauty combinando favoritos multimarca con cosmetiquera pastel.',
   },
   {
     id: 7,
     name: 'Aceite Nutritivo de Coco & Camelia',
+    brand: "L'Oréal Paris",
     category: 'cabello',
     tags: ['cabello', 'natural'],
     price: 46000,
@@ -88,11 +95,12 @@ export const products = [
     badge: 'Cruelty Free 🌿',
     image:
       'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=600&q=80',
-    desc: 'Protección térmica y nutrición para puntas secas.',
+    desc: "Cuidado capilar L'Oréal Paris comercializado por Glowe Beauty. Protección térmica y nutrición.",
   },
   {
     id: 8,
     name: 'Máscara de Pestañas Volume & Curl',
+    brand: 'Maybelline',
     category: 'maquillaje',
     tags: ['natural', 'renovar', 'economico'],
     price: 35000,
@@ -101,11 +109,12 @@ export const products = [
     badge: 'Efecto Elevación ✨',
     image:
       'https://images.unsplash.com/photo-1631214524020-7e18db9a8f92?auto=format&fit=crop&w=600&q=80',
-    desc: 'Definición sin grumos que resiste todo el día.',
+    desc: 'Maybelline 100% original garantizado por Glowe Beauty. Definición sin grumos todo el día.',
   },
   {
     id: 9,
     name: 'Corretivo Cream Blend Soft',
+    brand: 'Ruby Rose',
     category: 'maquillaje',
     tags: ['natural', 'radiante'],
     price: 29000,
@@ -114,11 +123,12 @@ export const products = [
     badge: 'Cobertura Flexible 🎨',
     image:
       'https://placehold.co/600x600/FDE2E4/FF758F?text=Corretivo',
-    desc: 'Corretivo cremoso de cobertura media que no marca líneas.',
+    desc: 'Original Ruby Rose distribuido por Glowe Beauty. Corretivo cremoso que no marca líneas.',
   },
   {
     id: 10,
     name: 'Iluminador Liquid Glow Drops',
+    brand: 'Atenea',
     category: 'maquillaje',
     tags: ['radiante', 'renovar'],
     price: 42000,
@@ -127,11 +137,12 @@ export const products = [
     badge: 'Top Rated ✨',
     image:
       'https://placehold.co/600x600/FDE2E4/FF758F?text=Iluminador',
-    desc: 'Perlas líquidas para un brillo espejo instantáneo.',
+    desc: 'Iluminador líquido Atenea distribuido por Glowe Beauty. Perlas para un brillo espejo instantáneo.',
   },
   {
     id: 11,
     name: 'Labial Mate Velvet Rose',
+    brand: 'Trendy',
     category: 'maquillaje',
     tags: ['renovar', 'natural'],
     price: 33000,
@@ -140,11 +151,12 @@ export const products = [
     badge: 'Fórmula Vegana 🌿',
     image:
       'https://placehold.co/600x600/FDE2E4/FF758F?text=Labial+Mate',
-    desc: 'Acabado mate aterciopelado, liviano y de larga duración.',
+    desc: 'Original Trendy en catálogo Glowe Beauty. Acabado mate aterciopelado de larga duración.',
   },
   {
     id: 12,
     name: 'Sombra Pastel Cloud Palette',
+    brand: 'Montoc',
     category: 'maquillaje',
     tags: ['regalo', 'renovar', 'radiante'],
     price: 48000,
@@ -153,11 +165,12 @@ export const products = [
     badge: 'Edición Pastel 💛',
     image:
       'https://placehold.co/600x600/FDE2E4/FF758F?text=Sombra+Pastel',
-    desc: '9 tonos pastel de alta pigmentación, mezcla sedosa.',
+    desc: 'Paleta original Montoc distribuida por Glowe Beauty. 9 tonos pastel de alta pigmentación.',
   },
   {
     id: 13,
     name: 'Shampoo Hidratante Silk Care',
+    brand: 'BioAqua',
     category: 'cabello',
     tags: ['cabello', 'natural', 'economico'],
     price: 28000,
@@ -166,11 +179,12 @@ export const products = [
     badge: 'Sin sales 🌿',
     image:
       'https://images.unsplash.com/photo-1556228578-8c89e6adf883?auto=format&fit=crop&w=600&q=80',
-    desc: 'Limpieza suave con espuma cremosa para uso diario.',
+    desc: 'Cuidado capilar BioAqua en tienda Glowe Beauty. Limpieza suave para uso diario.',
   },
   {
     id: 14,
     name: 'Crema para Peinar Curl Define',
+    brand: 'Kaba',
     category: 'cabello',
     tags: ['cabello', 'natural'],
     price: 36000,
@@ -179,11 +193,12 @@ export const products = [
     badge: 'Rizos Perfectos 🩵',
     image:
       'https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=600&q=80',
-    desc: 'Define rizos sin frizz con memoria de forma ligera.',
+    desc: 'Original Kaba comercializado por Glowe Beauty. Define rizos sin frizz con memoria ligera.',
   },
   {
     id: 15,
     name: 'Tratamiento Keratin Glow Mask',
+    brand: 'Olaplex',
     category: 'cabello',
     tags: ['cabello', 'regalo'],
     price: 55000,
@@ -192,11 +207,12 @@ export const products = [
     badge: 'Salón en Casa ✨',
     image:
       'https://images.unsplash.com/photo-1611080541599-8c6dbde6ed28?auto=format&fit=crop&w=600&q=80',
-    desc: 'Reconstrucción intensiva con queratina vegetal.',
+    desc: 'Tratamiento profesional garantizado por Glowe Beauty. Reconstrucción capilar intensiva.',
   },
   {
     id: 16,
     name: 'Kit Ritual Nocturno Glow',
+    brand: 'Glowe Select',
     category: 'cabello',
     tags: ['regalo', 'cabello'],
     price: 99000,
@@ -205,7 +221,7 @@ export const products = [
     badge: 'Kit Regalo 🎁',
     image:
       'https://placehold.co/600x600/E0F7FA/1B9AAA?text=Kit+Ritual',
-    desc: 'Mascarilla nocturna + aceite de camelia + toalla microfibra.',
+    desc: 'Curaduría multimarca exclusiva: mascarilla nocturna + aceite de camelia + toalla microfibra.',
   },
 ]
 

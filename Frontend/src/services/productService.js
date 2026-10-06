@@ -13,6 +13,7 @@ const normalizeProduct = (product = {}) => {
     _id: product._id ?? id ?? null,
     name: product.name ?? product.title ?? 'Producto Glowe',
     title: product.title ?? product.name ?? 'Producto Glowe',
+    brand: product.brand || 'Glowe Select',
     image,
     images: images.length > 0 ? images : image ? [image] : [],
     desc: product.desc ?? product.description ?? '',
@@ -38,6 +39,7 @@ export async function createProduct(input = {}) {
   const body = {
     name: input.name || 'Producto Glowe',
     title: input.title || input.name || 'Producto Glowe',
+    brand: input.brand || 'Glowe Select',
     category: input.category || 'maquillaje',
     price: Number(input.price ?? 0),
     oldPrice: input.oldPrice != null ? Number(input.oldPrice) : null,
@@ -67,6 +69,7 @@ export async function updateProduct(productId, input = {}) {
     method: 'PUT',
     body: JSON.stringify({
       ...input,
+      brand: input.brand !== undefined ? input.brand : undefined,
       price: Number(input.price ?? 0),
       stock: Number(input.stock ?? 0),
       isRecommended: Boolean(input.isRecommended),

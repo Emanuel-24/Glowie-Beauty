@@ -12,6 +12,7 @@ export const normalizeProduct = (product = {}) => {
     _id: product._id?.toString?.() ?? product.id ?? null,
     name: product.name ?? product.title ?? 'Producto Glowe',
     title: product.title ?? product.name ?? 'Producto Glowe',
+    brand: product.brand || 'Glowe Select',
     category: product.category ?? 'maquillaje',
     image,
     images: normalizedImages.length > 0 ? normalizedImages : image ? [image] : [],
@@ -45,6 +46,7 @@ export const createProductRecord = async (payload = {}) => {
   const nextProduct = {
     name: String(payload.name || '').trim() || 'Producto Glowe',
     title: String(payload.title || payload.name || 'Producto Glowe').trim(),
+    brand: String(payload.brand || 'Glowe Select').trim(),
     category: String(payload.category || 'maquillaje').trim() || 'maquillaje',
     price: Number(payload.price ?? 0),
     oldPrice: payload.oldPrice !== undefined && payload.oldPrice !== null ? Number(payload.oldPrice) : null,
@@ -82,6 +84,7 @@ export const updateProductRecord = async (id, payload = {}) => {
     ...currentProduct.toObject(),
     name: payload.name ? String(payload.name).trim() : currentProduct.name,
     title: payload.title ? String(payload.title).trim() : payload.name ? String(payload.name).trim() : currentProduct.title,
+    brand: payload.brand !== undefined ? String(payload.brand).trim() : currentProduct.brand,
     category: payload.category ? String(payload.category).trim() : currentProduct.category,
     price: payload.price !== undefined ? Number(payload.price) : currentProduct.price,
     oldPrice: payload.oldPrice !== undefined ? (payload.oldPrice === null ? null : Number(payload.oldPrice)) : currentProduct.oldPrice,
