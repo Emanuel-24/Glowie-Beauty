@@ -1,4 +1,4 @@
-# 🗺️ Hoja de Ruta del Proyecto - ElectroSoft
+# 🗺️ Hoja de Ruta del Proyecto - Glowe Beauty
 
 > Este documento sirve como memoria persistente y tablero de control para la IA y el equipo de desarrollo. Marcar con `[x]` a medida que se completen las tareas.
 

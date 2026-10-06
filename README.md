@@ -1,4 +1,4 @@
-# ElectroSoft — Sistema de Gestión Comercial y Tienda Web
+# Glowe Beauty — E-commerce de Belleza, Maquillaje y Cuidado Capilar
 
 [![Node.js](https://img.shields.io/badge/Node.js-v22+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.3.1-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev/)
@@ -123,7 +123,7 @@ Crea los archivos `.env` en sus respectivas carpetas tomando como base los `.env
 **`Backend/.env`**
 ```env
 PORT=5000
-MONGODB_URI=mongodb+srv://<usuario>:<password>@cluster.mongodb.net/electrosoft?retryWrites=true&w=majority
+MONGODB_URI=mongodb+srv://<usuario>:<password>@cluster.mongodb.net/glowebeauty?retryWrites=true&w=majority
 JWT_SECRET=tu_clave_secreta_jwt_super_segura
 FRONTEND_URL=http://localhost:5173
 ```
