@@ -1,0 +1,43 @@
+# Dependencias
+node_modules/
+.pnpm-store/
+
+# Entornos y variables de configuración sensibles
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+!.env.example
+
+# Compilación y artefactos de build
+dist/
+dist-ssr/
+build/
+*.local
+
+# Logs y diagnósticos de ejecución
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Archivos del sistema operativo y editores IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Agentes y memoria temporal
+.agents/scratch/
+
+# Archivos multimedia y recursos pesados de diseño
+Proyecto/
+interactive_visual_im_*.html
+Frontend/interactive_visual_im_*.html
+Recursos/*.jpeg
+Recursos/*.jpg
+Recursos/*.png
+Recursos/*.html

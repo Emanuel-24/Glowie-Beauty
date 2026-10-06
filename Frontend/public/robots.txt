@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Rutas privadas o protegidas
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /perfil
+Disallow: /checkout
+
+Sitemap: https://glowe-beauty.vercel.app/sitemap.xml
