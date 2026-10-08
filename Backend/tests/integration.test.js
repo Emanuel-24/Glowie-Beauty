@@ -5,6 +5,8 @@ import { normalizeProduct } from '../src/services/productService.js';
 import { normalizeCategory } from '../src/services/categoryService.js';
 import { normalizeOrder } from '../src/services/orderService.js';
 import { normalizePayment } from '../src/services/paymentService.js';
+import { normalizeTag } from '../src/services/tagService.js';
+import { normalizeSiteConfig } from '../src/services/siteConfigService.js';
 
 describe('Suite de Integración y Servicios Críticos - Backend Glowe Beauty', () => {
 
@@ -130,6 +132,47 @@ describe('Suite de Integración y Servicios Críticos - Backend Glowe Beauty', (
       assert.equal(normalized.name, 'Cabello');
       assert.equal(normalized.products, 15);
       assert.equal(normalized.status, 'Activa');
+    });
+  });
+
+  describe('5. Gestión de Etiquetas y Configuración del Sitio (Fases 1 y 2)', () => {
+    test('normalizeTag formatea correctamente identificadores y conteo', () => {
+      const rawTag = {
+        _id: 'tag_01',
+        name: 'Ojos',
+        slug: 'ojos',
+        description: 'Productos para la mirada',
+      };
+
+      const normalized = normalizeTag(rawTag, 8);
+
+      assert.equal(normalized.id, 'tag_01');
+      assert.equal(normalized.name, 'Ojos');
+      assert.equal(normalized.products, 8);
+      assert.equal(normalized.description, 'Productos para la mirada');
+    });
+
+    test('normalizeSiteConfig preserva heroConfig con valores por defecto y lista comunitaria', () => {
+      const rawConfig = {
+        _id: 'cfg_01',
+        heroConfig: {
+          floatingBadgeText: '✨ ¡Nuevo producto!',
+          tagline: 'RUTINA COMPLETA',
+          title: 'Glow Natural Everyday',
+        },
+        communityConfig: [
+          { imageUrl: 'https://glowe.com/c1.jpg', title: '@glow1', link: 'https://instagram.com' },
+        ],
+      };
+
+      const normalized = normalizeSiteConfig(rawConfig);
+
+      assert.equal(normalized.id, 'cfg_01');
+      assert.equal(normalized.heroConfig.floatingBadgeText, '✨ ¡Nuevo producto!');
+      assert.equal(normalized.heroConfig.tagline, 'RUTINA COMPLETA');
+      assert.equal(normalized.heroConfig.title, 'Glow Natural Everyday');
+      assert.equal(normalized.communityConfig.length, 1);
+      assert.equal(normalized.communityConfig[0].title, '@glow1');
     });
   });
 

@@ -119,3 +119,57 @@ export const deleteProductRecord = async (id) => {
 
   return { id };
 };
+
+export const getTopSellerProductRecord = async () => {
+  // 1. Analizar órdenes completadas
+  const Order = (await import('../models/Order.js')).default;
+  const SiteConfig = (await import('../models/SiteConfig.js')).default;
+
+  const topSellers = await Order.aggregate([
+    { $match: { status: 'Completada' } },
+    { $unwind: '$items' },
+    {
+      $group: {
+        _id: '$items.productId',
+        totalSold: { $sum: '$items.quantity' },
+      },
+    },
+    { $sort: { totalSold: -1 } },
+    { $limit: 1 },
+  ]);
+
+  if (topSellers.length > 0 && topSellers[0]._id) {
+    const product = await Product.findById(topSellers[0]._id).lean();
+    if (product) {
+      return {
+        ...normalizeProduct(product),
+        totalSold: topSellers[0].totalSold,
+      };
+    }
+  }
+
+  // Fallback 1: Buscar en heroConfig.featuredProductId
+  const config = await SiteConfig.findOne().lean();
+  if (config?.heroConfig?.featuredProductId) {
+    const featured = await Product.findById(config.heroConfig.featuredProductId).lean();
+    if (featured) {
+      return {
+        ...normalizeProduct(featured),
+        totalSold: 0,
+        isFallback: true,
+      };
+    }
+  }
+
+  // Fallback 2: Primer producto activo en el catálogo
+  const firstProduct = await Product.findOne().sort({ createdAt: -1 }).lean();
+  if (firstProduct) {
+    return {
+      ...normalizeProduct(firstProduct),
+      totalSold: 0,
+      isFallback: true,
+    };
+  }
+
+  return null;
+};

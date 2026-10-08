@@ -66,7 +66,7 @@ function AppLayout() {
       {!isAdminArea && <GlowBackground />}
       {!isAdminArea && <Header products={products} />}
 
-      <main id="contenido-principal" className={`relative ${isAdminArea ? '' : 'pb-36 xl:pb-0'}`}>
+      <main id="contenido-principal" className={`relative ${isAdminArea ? '' : 'pb-0 xl:pb-0'}`}>
         <Routes>
           <Route path="/" element={<Inicio />} />
           <Route path="/maquillaje" element={<Maquillaje />} />

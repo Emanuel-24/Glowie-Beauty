@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Search, X } from 'lucide-react'
 import ProductCard from './ProductCard'
 
 gsap.registerPlugin(ScrollTrigger)
@@ -11,16 +12,55 @@ const categoryPills = [
   { value: 'cabello', label: 'Cabello' },
 ]
 
-export default function ProductGrid({ products, glowFilter, onResetFilter, categoryLock = null, title = 'Tus próximos favoritos 💖', subtitle = 'Selección Especial' }) {
+export default function ProductGrid({
+  products,
+  glowFilter,
+  activeTag = null,
+  searchQuery = '',
+  enableSearch = false,
+  onSearchChange,
+  onClearTag,
+  onClearSearch,
+  onResetFilter,
+  categoryLock = null,
+  title = 'Tus próximos favoritos 💖',
+  subtitle = 'Selección Especial',
+}) {
   const [category, setCategory] = useState('all')
   const sectionRef = useRef(null)
 
   const filtered = products.filter((p) => {
+    // 1. Filtrar por Categoría
     const matchCategory = categoryLock
       ? p.category === categoryLock
       : category === 'all' || p.category === category
-    const matchTag = !glowFilter || p.tags.includes(glowFilter.tag)
-    return matchCategory && matchTag
+
+    // 2. Filtrar por Etiqueta / Tag
+    let matchTag = true
+    if (activeTag) {
+      const searchTag = activeTag.trim().toLowerCase()
+      const hasInTags = Array.isArray(p.tags) && p.tags.some((t) => t?.toLowerCase().includes(searchTag))
+      const hasInName = p.name?.toLowerCase().includes(searchTag)
+      const hasInCategory = p.category?.toLowerCase().includes(searchTag)
+      const hasInBrand = p.brand?.toLowerCase().includes(searchTag)
+      matchTag = hasInTags || hasInName || hasInCategory || hasInBrand
+    } else if (glowFilter) {
+      matchTag = Array.isArray(p.tags) && p.tags.includes(glowFilter.tag)
+    }
+
+    // 3. Filtrar por Búsqueda de texto (nombre, marca o tag)
+    let matchSearch = true
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.trim().toLowerCase()
+      const inName = p.name?.toLowerCase().includes(query)
+      const inBrand = p.brand?.toLowerCase().includes(query)
+      const inCategory = p.category?.toLowerCase().includes(query)
+      const inTags = Array.isArray(p.tags) && p.tags.some((t) => t?.toLowerCase().includes(query))
+      const inDesc = p.desc?.toLowerCase().includes(query)
+      matchSearch = inName || inBrand || inCategory || inTags || inDesc
+    }
+
+    return matchCategory && matchTag && matchSearch
   })
 
   useEffect(() => {
@@ -45,9 +85,9 @@ export default function ProductGrid({ products, glowFilter, onResetFilter, categ
   }, [filtered.length])
 
   return (
-    <section ref={sectionRef} id="favoritos" className="py-12 relative scroll-mt-24">
+    <section ref={sectionRef} id="favoritos" className="pb-12 relative scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-glowe-pink-accent">
               {subtitle}
@@ -55,24 +95,103 @@ export default function ProductGrid({ products, glowFilter, onResetFilter, categ
             <h2 className="font-serif text-3xl font-bold text-glowe-dark">{title}</h2>
           </div>
 
-          {!categoryLock && (
-            <div className="hide-scrollbar -mx-1 flex max-w-full items-center gap-2 overflow-x-auto rounded-full border border-white bg-white/60 p-1 shadow-sm sm:mx-0">
-              {categoryPills.map((pill) => (
-                <button
-                  key={pill.value}
-                  onClick={() => setCategory(pill.value)}
-                  className={`min-h-10 shrink-0 rounded-full px-4 py-1.5 text-xs transition-all ${
-                    category === pill.value
-                      ? 'bg-white shadow-sm text-glowe-dark font-bold'
-                      : 'font-semibold text-glowe-muted hover:text-glowe-dark'
-                  }`}
-                >
-                  {pill.label}
-                </button>
-              ))}
-            </div>
-          )}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            {enableSearch && (
+              <div className="relative min-w-[220px] max-w-full">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-glowe-muted pointer-events-none" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
+                  placeholder="Buscar por nombre, marca o tag..."
+                  aria-label="Buscar productos por nombre, marca o tag"
+                  className="w-full rounded-full border border-white/80 bg-white/70 pl-9 pr-8 py-2 text-xs text-glowe-dark placeholder:text-glowe-muted focus:outline-none focus:ring-2 focus:ring-glowe-pink-accent shadow-sm backdrop-blur-sm transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={onClearSearch}
+                    aria-label="Limpiar búsqueda"
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-glowe-muted hover:text-glowe-dark transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            {!categoryLock && (
+              <div className="hide-scrollbar -mx-1 flex max-w-full items-center gap-1.5 overflow-x-auto rounded-full border border-white bg-white/60 p-1 shadow-sm sm:mx-0">
+                {categoryPills.map((pill) => (
+                  <button
+                    key={pill.value}
+                    onClick={() => setCategory(pill.value)}
+                    className={`min-h-9 shrink-0 rounded-full px-4 py-1.5 text-xs transition-all ${
+                      category === pill.value
+                        ? 'bg-white shadow-sm text-glowe-dark font-bold'
+                        : 'font-semibold text-glowe-muted hover:text-glowe-dark'
+                    }`}
+                  >
+                    {pill.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Indicador Visual de Filtros Activos (Pills con botón X) */}
+        {(activeTag || searchQuery || (glowFilter && !activeTag)) && (
+          <div className="mb-6 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-glowe-muted mr-1">Filtros activos:</span>
+            {activeTag && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-glowe-pink px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
+                🏷️ Etiqueta: <span className="capitalize text-glowe-pink-accent">{activeTag}</span>
+                <button
+                  type="button"
+                  onClick={onClearTag}
+                  aria-label={`Eliminar filtro de etiqueta ${activeTag}`}
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {searchQuery && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 border border-amber-300 px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
+                🔍 Búsqueda: <span className="text-amber-800">"{searchQuery}"</span>
+                <button
+                  type="button"
+                  onClick={onClearSearch}
+                  aria-label="Limpiar término de búsqueda"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            {glowFilter && !activeTag && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 border border-glowe-blue px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
+                {glowFilter.icon} <span>{glowFilter.label}</span>
+                <button
+                  type="button"
+                  onClick={onResetFilter}
+                  aria-label="Limpiar filtro"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  ✕
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={onResetFilter}
+              className="text-[11px] font-semibold text-glowe-pink-accent hover:underline ml-2"
+            >
+              Limpiar todos
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 gap-4 min-[440px]:grid-cols-2 sm:gap-6 md:grid-cols-3 xl:grid-cols-4">
           {filtered.length === 0 ? (
@@ -86,7 +205,7 @@ export default function ProductGrid({ products, glowFilter, onResetFilter, categ
               </p>
               <button
                 onClick={onResetFilter}
-                className="mt-4 px-4 py-2 bg-glowe-pink-accent text-white font-bold text-xs rounded-full hover:bg-rose-500 transition-colors"
+                className="mt-4 px-4 py-2 bg-glowe-pink-accent text-white font-bold text-xs rounded-full hover:bg-rose-500 transition-colors cursor-pointer"
               >
                 Ver todos los productos
               </button>

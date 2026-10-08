@@ -1,44 +1,68 @@
-import { useEffect, useRef } from 'react'
+﻿import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { Orbit } from '@uiball/loaders'
 import Button from '../ui/Button'
 import Card from '../ui/Card'
+import { getSiteConfig, defaultSiteConfig } from '../../services/siteConfigService'
+import { getTopSellerProduct } from '../../services/productService'
 
 gsap.registerPlugin(ScrollTrigger)
-
-const microCards = [
-  {
-    className: 'absolute -top-4 -left-6 px-4 py-2.5 flex items-center gap-3 shadow-lg',
-    inner: (
-      <>
-        <div className="w-8 h-8 rounded-full bg-glowe-yellow flex items-center justify-center text-sm shadow-inner">⭐</div>
-        <div>
-          <span className="block text-xs font-bold text-glowe-dark">El más vendido</span>
-          <span className="block text-[10px] text-glowe-muted">Brillo Labial HydraGlow</span>
-        </div>
-      </>
-    ),
-  },
-  {
-    className: 'absolute -bottom-6 -right-4 px-4 py-3 flex items-center gap-3 shadow-lg',
-    inner: (
-      <>
-        <div className="w-10 h-10 rounded-full bg-glowe-pink flex items-center justify-center text-base shadow-inner">💖</div>
-        <div>
-          <div className="flex text-amber-400 text-xs">★★★★★</div>
-          <span className="block text-xs font-bold text-glowe-dark">4.9/5 Rating</span>
-          <span className="block text-[10px] text-glowe-muted">+1.2k Calificaciones</span>
-        </div>
-      </>
-    ),
-  },
-]
 
 export default function HeroSection() {
   const navigate = useNavigate()
   const rootRef = useRef(null)
+  const [heroConfig, setHeroConfig] = useState(null)
+  const [topSeller, setTopSeller] = useState(null)
+  const [configLoaded, setConfigLoaded] = useState(false)
+  const [imageLoading, setImageLoading] = useState(true)
   const goToDiscover = (params = '') => navigate(`/descubrir${params}`)
+
+  const activeHeroConfig = heroConfig || defaultSiteConfig.heroConfig
+  const featuredProduct = activeHeroConfig?.featuredProduct || topSeller
+  const featuredId = featuredProduct?.id || featuredProduct?._id || activeHeroConfig?.featuredProductId
+  const topSellerId = topSeller?.id || topSeller?._id
+
+  // Solo resolver la imagen cuando la configuración haya respondido
+  const featuredImage = configLoaded
+    ? (featuredProduct?.image ||
+       featuredProduct?.images?.[0] ||
+       'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80')
+    : null
+
+  const featuredPriceFormatted =
+    featuredProduct?.price != null
+      ? `$${Number(featuredProduct.price).toLocaleString('es-CO')} COP`
+      : '$45.000 COP'
+
+  useEffect(() => {
+    if (featuredImage) {
+      setImageLoading(true)
+    }
+  }, [featuredImage])
+
+  useEffect(() => {
+    let active = true
+
+    Promise.all([
+      getSiteConfig().catch(() => null),
+      getTopSellerProduct().catch(() => null),
+    ]).then(([config, prod]) => {
+      if (!active) return
+      if (config?.heroConfig) {
+        setHeroConfig(config.heroConfig)
+      }
+      if (prod) {
+        setTopSeller(prod)
+      }
+      setConfigLoaded(true)
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   useEffect(() => {
     if (!rootRef.current) return undefined
@@ -116,51 +140,118 @@ export default function HeroSection() {
               <div className="flex items-center gap-1.5">
                 <span className="text-glowe-yellow-accent text-base">⚡</span> Envíos a Toda Colombia
               </div>
-              <div className="flex items-center gap-1.5">
+              <a
+                href="https://wa.me/573000000000?text=Hola%2C%20me%20gustar%C3%ADa%20recibir%20asesor%C3%ADa%20personalizada%20para%20elegir%20mis%20productos."
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 hover:text-emerald-500 transition-colors"
+              >
                 <span className="text-glowe-blue-accent text-base">💬</span> Asesoría por WhatsApp
-              </div>
+              </a>
             </div>
           </div>
 
           {/* Right Visual Showcase */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
-              <div className="relative rounded-3xl overflow-hidden glass-panel p-4 border-white/90 shadow-2xl">
-                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-glowe-pink/40 via-glowe-yellow/30 to-glowe-blue/40">
-                  <img
-                    src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=800&q=80"
-                    alt="Modelo con maquillaje natural y piel radiante, imagen de la rutina Glow Natural Everyday de GLOWE BEAUTY"
-                    className="w-full h-full object-cover rounded-2xl transition-transform duration-700 hover:scale-105"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-glowe-dark/50 via-transparent to-transparent" />
+              <div
+                className="relative rounded-3xl overflow-hidden glass-panel p-3.5 sm:p-4 border-white/90 shadow-2xl cursor-pointer group"
+                onClick={() => {
+                  if (featuredId) navigate(`/producto/${featuredId}`)
+                  else goToDiscover()
+                }}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    if (featuredId) navigate(`/producto/${featuredId}`)
+                    else goToDiscover()
+                  }
+                }}
+                aria-label={`Ver producto destacado: ${featuredProduct?.name || 'Glow Natural Everyday'}`}
+              >
+                <div className="relative aspect-[4/5] rounded-2xl overflow-hidden bg-gradient-to-br from-glowe-pink/40 via-glowe-yellow/30 to-glowe-blue/40 flex items-center justify-center">
+                  {(!configLoaded || imageLoading || !featuredImage) && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                      <Orbit size={34} color="#ff758f" speed={1.4} />
+                    </div>
+                  )}
+                  {featuredImage && (
+                    <img
+                      key={featuredImage}
+                      src={featuredImage}
+                      alt={featuredProduct?.name || 'Modelo con maquillaje natural y piel radiante, imagen de la rutina Glow Natural Everyday de GLOWE BEAUTY'}
+                      onLoad={() => setImageLoading(false)}
+                      onError={() => setImageLoading(false)}
+                      className={`w-full h-full object-cover rounded-2xl transition-all duration-700 group-hover:scale-105 ${
+                        imageLoading ? 'opacity-0' : 'opacity-100'
+                      }`}
+                    />
+                  )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-glowe-dark/60 via-transparent to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4 text-white">
-                    <span className="text-xs uppercase tracking-widest font-bold text-glowe-yellow">Rutina Completa</span>
-                    <p className="text-lg font-bold font-serif">Glow Natural Everyday</p>
+                    <span className="text-xs uppercase tracking-widest font-bold text-glowe-yellow">
+                      {activeHeroConfig?.tagline || 'Rutina Completa'}
+                    </span>
+                    <p className="text-base sm:text-lg font-bold font-serif line-clamp-1">
+                      {featuredProduct?.name || activeHeroConfig?.title || 'Glow Natural Everyday'}
+                    </p>
                   </div>
                 </div>
               </div>
 
-              {/* Floating interactive badge */}
+              {/* Floating interactive badge (editable desde el admin) */}
               <Button
                 variant="glass"
                 size="sm"
-                onClick={() => goToDiscover()}
-                className="hero-float-card absolute top-1/2 -right-4 hidden border-glowe-pink bg-white/95 text-glowe-pink-accent opacity-100 shadow-md hover:scale-110 sm:inline-flex sm:-right-8"
+                onClick={() => {
+                  if (featuredId) navigate(`/producto/${featuredId}`)
+                  else goToDiscover()
+                }}
+                className="hero-float-card absolute top-1/2 -right-2 sm:-right-8 -translate-y-1/2 border border-glowe-pink bg-white/95 text-glowe-pink-accent opacity-100 shadow-md hover:scale-110 z-20 inline-flex font-bold text-xs sm:text-xs cursor-pointer"
                 style={{ opacity: 1 }}
               >
-                ✨ ¡Nuevo Lip Serum!
+                {activeHeroConfig?.floatingBadgeText || '✨ ¡Nuevo Lip Serum!'}
               </Button>
 
-              {microCards.map((card, i) => (
-                <Card
-                  key={i}
-                  radius="2xl"
-                  className={`${card.className} hero-float-card hidden bg-white/95 opacity-100 sm:flex`}
-                  style={{ opacity: 1 }}
-                >
-                  {card.inner}
-                </Card>
-              ))}
+              {/* Micro tarjeta 1: El más vendido (información fija en código) */}
+              <Card
+                radius="2xl"
+                className="absolute -top-3 -left-2 sm:-top-4 sm:-left-6 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform max-w-[170px] sm:max-w-none z-20 border border-white/80"
+                style={{ opacity: 1 }}
+                onClick={() => navigate('/producto/1')}
+              >
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-glowe-yellow flex items-center justify-center text-xs sm:text-sm shadow-inner shrink-0">⭐</div>
+                <div className="min-w-0">
+                  <span className="block text-[11px] sm:text-xs font-bold text-glowe-dark leading-tight">#1 Más vendido</span>
+                  <span className="block text-[9px] sm:text-[10px] text-glowe-muted hover:text-glowe-pink-accent transition-colors font-medium truncate">
+                    ¡Lo que más prefieren!
+                  </span>
+                </div>
+              </Card>
+
+              {/* Micro tarjeta 2: Precio del producto destacado*/}
+              <Card
+                radius="2xl"
+                className="absolute -bottom-3 -right-2 sm:-bottom-6 sm:-right-4 px-3 py-2 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform border border-white/80 max-w-[175px] sm:max-w-none z-20"
+                style={{ opacity: 1 }}
+                onClick={() => {
+                  if (featuredId) navigate(`/producto/${featuredId}`)
+                  else goToDiscover()
+                }}
+              >
+                <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-full bg-gradient-to-tr from-glowe-pink/40 to-glowe-yellow/50 flex items-center justify-center text-xs sm:text-sm shadow-inner shrink-0">
+                  🏷️
+                </div>
+                <div className="min-w-0">
+                  <span className="block text-[9px] sm:text-[10px] font-bold uppercase tracking-wider text-glowe-pink-accent leading-tight">
+                    Precio Especial
+                  </span>
+                  <span className="block text-[11px] sm:text-xs font-black text-glowe-dark tracking-tight">
+                    {featuredPriceFormatted}
+                  </span>
+                </div>
+              </Card>
             </div>
           </div>
         </div>

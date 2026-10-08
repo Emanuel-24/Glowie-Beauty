@@ -10,6 +10,8 @@ import { getCategories, createCategory, updateCategory, deleteCategory } from '.
 import { getUsers, createUser, updateUser, deleteUser } from '../services/userService'
 import { getOrders, createOrder, updateOrder, deleteOrder } from '../services/orderService'
 import { getPayments, createPayment, cancelPayment } from '../services/paymentService'
+import { getTags, createTag, deleteTag } from '../services/tagService'
+import { getSiteConfig, updateSiteConfig, defaultSiteConfig } from '../services/siteConfigService'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../context/ToastContext'
 import Button from '../components/ui/Button'
@@ -80,6 +82,7 @@ const emptyProductForm = {
   image: '',
   badge: 'Nuevo',
   desc: '',
+  tags: [],
   isRecommended: false,
   recommendedOrder: '',
 }
@@ -90,13 +93,20 @@ const emptyCategoryForm = {
   status: 'Activa',
 }
 
+const emptyTagForm = {
+  name: '',
+  description: '',
+}
+
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', emoji: '◈' },
   { id: 'categories', label: 'Categoría de productos', emoji: '▣' },
+  { id: 'tags', label: 'Etiquetas / Tags', emoji: '🏷️' },
   { id: 'products', label: 'Productos', emoji: '◌' },
   { id: 'orders', label: 'Compras', emoji: '◎' },
   { id: 'payments', label: 'Pagos y abonos', emoji: '◐' },
   { id: 'users', label: 'Usuarios', emoji: '◍' },
+  { id: 'siteConfig', label: 'Configuración Web', emoji: '⚙️' },
 ]
 
 function GloweeLogo() {
@@ -130,14 +140,28 @@ export default function Admin() {
   const [categoryModalOpen, setCategoryModalOpen] = useState(false)
   const [editingCategoryId, setEditingCategoryId] = useState(null)
   const [categoryForm, setCategoryForm] = useState(emptyCategoryForm)
+  const [tags, setTags] = useState([])
+  const [tagModalOpen, setTagModalOpen] = useState(false)
+  const [tagForm, setTagForm] = useState(emptyTagForm)
+  const [siteConfigData, setSiteConfigData] = useState(defaultSiteConfig)
+  const [isSavingConfig, setIsSavingConfig] = useState(false)
+  const [newCommunityItem, setNewCommunityItem] = useState({ imageUrl: '', title: '', link: '' })
 
   useEffect(() => {
     let active = true
     setModuleReady(false)
 
-    Promise.allSettled([getProducts(), getCategories(), getOrders(), getUsers(), getPayments()])
-      .then(([items, categoryItems, orderItems, userItems, paymentItems]) => {
+    Promise.allSettled([getProducts(), getCategories(), getOrders(), getUsers(), getPayments(), getTags(), getSiteConfig()])
+      .then(([items, categoryItems, orderItems, userItems, paymentItems, tagItems, configItem]) => {
         if (!active) return
+
+        if (tagItems.status === 'fulfilled' && Array.isArray(tagItems.value)) {
+          setTags(tagItems.value)
+        }
+
+        if (configItem.status === 'fulfilled' && configItem.value) {
+          setSiteConfigData(configItem.value)
+        }
 
         if (items.status === 'fulfilled' && Array.isArray(items.value) && items.value.length > 0) {
           setProducts(
@@ -151,6 +175,7 @@ export default function Admin() {
               image: item.image || item.images?.[0] || defaultProducts[0].image,
               badge: item.badge || 'Nuevo',
               desc: item.desc || item.description || 'Producto de la colección Glowe.',
+              tags: Array.isArray(item.tags) ? item.tags : [],
               isRecommended: Boolean(item.isRecommended),
               recommendedOrder: Number(item.recommendedOrder ?? 0),
             })),
@@ -324,6 +349,7 @@ export default function Admin() {
         stockTone: Number(product.stock || 0) > 0 ? 'success' : 'danger',
         badge: product.badge || 'Nuevo',
         desc: product.desc || '',
+        tags: Array.isArray(product.tags) ? product.tags : [],
       })),
     [products],
   )
@@ -394,10 +420,70 @@ const orderRows = useMemo(
     },
   ]
 
+  const tagRows = useMemo(
+    () =>
+      tags.map((tag) => ({
+        id: tag.id || tag._id,
+        name: tag.name,
+        slug: tag.slug || '',
+        description: tag.description || 'Sin descripción',
+        products: Number(tag.products || 0),
+      })),
+    [tags],
+  )
+
+  const tagColumns = [
+    {
+      key: 'name',
+      header: 'Etiqueta',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-pink-100 px-3 py-1 text-xs font-bold text-glowe-pink-accent">
+            #{row.name}
+          </span>
+          <span className="text-xs text-glowe-muted">({row.slug})</span>
+        </div>
+      ),
+    },
+    { key: 'description', header: 'Descripción', render: (row) => <span className="text-sm text-glowe-muted">{row.description}</span> },
+    { key: 'products', header: 'Productos asociados', render: (row) => <span className="text-sm font-semibold text-glowe-dark">{row.products}</span> },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <ActionButton type="delete" title="Eliminar etiqueta" onClick={() => handleDeleteTag(row.id)}>
+            Eliminar
+          </ActionButton>
+        </div>
+      ),
+    },
+  ]
+
   const productColumns = [
     { key: 'number', header: '#', className: 'w-16', render: (row) => <span className="font-bold text-glowe-muted">{row.number}</span> },
     { key: 'image', header: 'Imagen', render: (row) => <img src={row.image} alt={row.name} className="h-12 w-12 rounded-xl object-cover ring-1 ring-glowe-pink/20" loading="lazy" /> },
-    { key: 'name', header: 'Nombre & Marca', render: (row) => <div><p className="font-semibold text-glowe-dark">{row.name}</p><p className="text-[10px] uppercase tracking-[0.14em] text-glowe-pink-accent font-bold">{row.brand || 'Glowe Select'} • <span className="text-glowe-muted">{row.badge}</span></p></div> },
+    {
+      key: 'name',
+      header: 'Nombre & Marca',
+      render: (row) => (
+        <div>
+          <p className="font-semibold text-glowe-dark">{row.name}</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-glowe-pink-accent font-bold">
+            {row.brand || 'Glowe Select'} • <span className="text-glowe-muted">{row.badge}</span>
+          </p>
+          {Array.isArray(row.tags) && row.tags.length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-1">
+              {row.tags.map((tg) => (
+                <span key={tg} className="rounded-full bg-pink-50 px-2 py-0.2 text-[9px] font-semibold text-glowe-pink-accent border border-pink-100">
+                  #{tg}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
+    },
     { key: 'category', header: 'Categoría', render: (row) => <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-glowe-muted">{row.category}</span> },
     { key: 'price', header: 'Precio', render: (row) => <span className="font-bold text-glowe-dark">{row.price}</span> },
     { key: 'stock', header: 'Stock', render: (row) => <StatusBadge label={row.stockLabel} tone={row.stockTone} /> },
@@ -474,23 +560,27 @@ const orderRows = useMemo(
   const currentModuleRows =
     activeModule === 'categories'
       ? categoryRows
-      : activeModule === 'products'
-        ? productRows
-        : activeModule === 'orders'
-          ? orderRows
-          : activeModule === 'payments'
-            ? paymentRows
-            : userRows
+      : activeModule === 'tags'
+        ? tagRows
+        : activeModule === 'products'
+          ? productRows
+          : activeModule === 'orders'
+            ? orderRows
+            : activeModule === 'payments'
+              ? paymentRows
+              : userRows
   const currentModuleColumns =
     activeModule === 'categories'
       ? categoryColumns
-      : activeModule === 'products'
-        ? productColumns
-        : activeModule === 'orders'
-          ? orderColumns
-          : activeModule === 'payments'
-            ? paymentColumns
-            : userColumns
+      : activeModule === 'tags'
+        ? tagColumns
+        : activeModule === 'products'
+          ? productColumns
+          : activeModule === 'orders'
+            ? orderColumns
+            : activeModule === 'payments'
+              ? paymentColumns
+              : userColumns
 
   const confirmDestructiveAction = (message) => {
     if (typeof window !== 'undefined' && window.confirm) {
@@ -512,6 +602,7 @@ const orderRows = useMemo(
         image: product.image || '',
         badge: product.badge || 'Nuevo',
         desc: product.desc || '',
+        tags: Array.isArray(product.tags) ? product.tags : [],
         isRecommended: Boolean(product.isRecommended),
         recommendedOrder: String(product.recommendedOrder ?? ''),
       })
@@ -537,10 +628,17 @@ const orderRows = useMemo(
     setCategoryModalOpen(true)
   }
 
+  const openTagModal = () => {
+    setTagForm(emptyTagForm)
+    setTagModalOpen(true)
+  }
+
   const moduleMeta = {
     dashboard: { title: 'Dashboard' },
     categories: { title: 'Categoría de productos', action: () => openCategoryModal() },
+    tags: { title: 'Etiquetas / Tags', action: () => openTagModal() },
     products: { title: 'Productos', action: () => openProductModal() },
+    siteConfig: { title: 'Configuración Web', action: null },
     orders: {
       title: 'Compras',
       action: async () => {
@@ -648,6 +746,9 @@ const orderRows = useMemo(
         if (activeModule === 'categories') {
           return { Nombre: row.name, Productos: row.products, Ventas: row.revenue, Estado: row.status }
         }
+        if (activeModule === 'tags') {
+          return { Nombre: row.name, Slug: row.slug, Descripcion: row.description, ProductosAsociados: row.products }
+        }
         if (activeModule === 'products') {
           return { Nombre: row.name, Categoria: row.category, Precio: row.priceValue, Stock: row.stock, Estado: row.stockLabel }
         }
@@ -662,13 +763,15 @@ const orderRows = useMemo(
 
       title = activeModule === 'categories'
         ? 'reporte-categorias'
-        : activeModule === 'products'
-          ? 'reporte-productos'
-          : activeModule === 'orders'
-            ? 'reporte-compras'
-            : activeModule === 'payments'
-              ? 'reporte-pagos'
-              : 'reporte-usuarios'
+        : activeModule === 'tags'
+          ? 'reporte-etiquetas'
+          : activeModule === 'products'
+            ? 'reporte-productos'
+            : activeModule === 'orders'
+              ? 'reporte-compras'
+              : activeModule === 'payments'
+                ? 'reporte-pagos'
+                : 'reporte-usuarios'
     }
 
     if (type === 'excel') {
@@ -819,6 +922,7 @@ const orderRows = useMemo(
       badge: productForm.badge || 'Nuevo',
       desc: productForm.desc || 'Producto de la colección Glowe.',
       description: productForm.desc || 'Producto de la colección Glowe.',
+      tags: Array.isArray(productForm.tags) ? productForm.tags : [],
       isRecommended: Boolean(productForm.isRecommended),
       recommendedOrder: Number(productForm.recommendedOrder ?? 0),
     }
@@ -868,6 +972,81 @@ const orderRows = useMemo(
     setCategoryModalOpen(false)
     setCategoryForm(emptyCategoryForm)
     setEditingCategoryId(null)
+  }
+
+  const handleDeleteTag = async (id) => {
+    const shouldDelete = confirmDestructiveAction('¿Eliminar esta etiqueta?')
+    if (!shouldDelete) return
+
+    const result = await deleteTag(id)
+    if (result?.ok === false) return
+    setTags((prev) => prev.filter((item) => (item.id ?? item._id) !== id))
+    showToast('Etiqueta eliminada', 'Se retiró la etiqueta.', '🗑️')
+  }
+
+  const handleTagSubmit = async (event) => {
+    event.preventDefault()
+    if (!tagForm.name.trim()) {
+      showToast('Error', 'El nombre de la etiqueta es obligatorio.', '⚠️')
+      return
+    }
+
+    try {
+      const created = await createTag({
+        name: tagForm.name.trim(),
+        description: tagForm.description.trim(),
+      })
+      setTags((prev) => [...prev, created])
+      setTagModalOpen(false)
+      setTagForm(emptyTagForm)
+      showToast('Etiqueta creada', `Se añadió #${created.name}.`, '✅')
+    } catch (err) {
+      showToast('Error', err.message || 'No se pudo crear la etiqueta.', '❌')
+    }
+  }
+
+  const handleSaveSiteConfig = async (e) => {
+    if (e?.preventDefault) e.preventDefault()
+    setIsSavingConfig(true)
+    try {
+      const updated = await updateSiteConfig(siteConfigData)
+      setSiteConfigData(updated)
+      showToast('Configuración guardada', 'Los cambios en Hero y Comunidad Glowe se han actualizado.', '✅')
+    } catch (err) {
+      showToast('Error', err.message || 'No se pudo guardar la configuración.', '❌')
+    } finally {
+      setIsSavingConfig(false)
+    }
+  }
+
+  const handleAddCommunityItem = () => {
+    if (!newCommunityItem.imageUrl.trim()) {
+      showToast('Imagen requerida', 'Debes ingresar una URL de imagen.', '⚠️')
+      return
+    }
+
+    const item = {
+      id: `comm-${Date.now()}`,
+      imageUrl: newCommunityItem.imageUrl.trim(),
+      title: newCommunityItem.title.trim() || '@glowe_community',
+      link: newCommunityItem.link.trim() || 'https://instagram.com/GloweBeautyCO',
+    }
+
+    setSiteConfigData((prev) => ({
+      ...prev,
+      communityConfig: [...(prev.communityConfig || []), item],
+    }))
+
+    setNewCommunityItem({ imageUrl: '', title: '', link: '' })
+    showToast('Añadido', 'Elemento agregado a la lista. Guarda los cambios para persistir.', '✨')
+  }
+
+  const handleRemoveCommunityItem = (index) => {
+    setSiteConfigData((prev) => ({
+      ...prev,
+      communityConfig: (prev.communityConfig || []).filter((_, i) => i !== index),
+    }))
+    showToast('Eliminado', 'Elemento removido. Guarda los cambios para persistir.', '🗑️')
   }
 
   const handleSearchChange = (value) => {
@@ -996,6 +1175,196 @@ const orderRows = useMemo(
       )
     }
 
+    if (activeModule === 'siteConfig') {
+      return (
+        <div className="space-y-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-glowe-pink-accent">CMS Storefront</p>
+              <h1 className="font-serif text-2xl font-bold text-glowe-dark sm:text-3xl">Configuración de Tienda</h1>
+              <p className="text-xs text-glowe-muted">Personaliza la sección Hero principal y el escaparate de la Comunidad Glowe.</p>
+            </div>
+            <Button
+              variant="gradient"
+              onClick={handleSaveSiteConfig}
+              disabled={isSavingConfig}
+              className="sm:w-auto"
+            >
+              {isSavingConfig ? 'Guardando...' : '💾 Guardar Configuración'}
+            </Button>
+          </div>
+
+          {/* Hero Section Configuration */}
+          <section className="rounded-[1.8rem] border border-white/80 bg-white/70 p-5 shadow-sm space-y-4 backdrop-blur-md">
+            <div className="flex items-center gap-2 border-b border-pink-100 pb-3">
+              <span className="text-xl">✨</span>
+              <h2 className="font-serif text-xl font-bold text-glowe-dark">Hero Section (Cabecera Principal)</h2>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                  Producto Destacado (Featured Product)
+                </label>
+                <select
+                  value={siteConfigData.heroConfig?.featuredProductId || ''}
+                  onChange={(e) =>
+                    setSiteConfigData((prev) => ({
+                      ...prev,
+                      heroConfig: {
+                        ...prev.heroConfig,
+                        featuredProductId: e.target.value || null,
+                      },
+                    }))
+                  }
+                  className="glass-input h-11 w-full rounded-full px-4 text-sm"
+                >
+                  <option value="">-- Sin producto seleccionado (Automático) --</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} ({p.brand}) - {formatCOP(p.price)}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-[11px] text-glowe-muted">
+                  Selecciona el producto que se vinculará como oferta/estrella en la sección Hero.
+                </p>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                  Texto del Badge Flotante
+                </label>
+                <Input
+                  value={siteConfigData.heroConfig?.floatingBadgeText || ''}
+                  onChange={(e) =>
+                    setSiteConfigData((prev) => ({
+                      ...prev,
+                      heroConfig: {
+                        ...prev.heroConfig,
+                        floatingBadgeText: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="✨ ¡Nuevo producto!"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                  Tagline / Subtítulo Superior
+                </label>
+                <Input
+                  value={siteConfigData.heroConfig?.tagline || ''}
+                  onChange={(e) =>
+                    setSiteConfigData((prev) => ({
+                      ...prev,
+                      heroConfig: {
+                        ...prev.heroConfig,
+                        tagline: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="RUTINA COMPLETA"
+                  className="w-full"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                  Título Principal del Showcase
+                </label>
+                <Input
+                  value={siteConfigData.heroConfig?.title || ''}
+                  onChange={(e) =>
+                    setSiteConfigData((prev) => ({
+                      ...prev,
+                      heroConfig: {
+                        ...prev.heroConfig,
+                        title: e.target.value,
+                      },
+                    }))
+                  }
+                  placeholder="Glow Natural Everyday"
+                  className="w-full"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Comunidad Glowe Section Configuration */}
+          <section className="rounded-[1.8rem] border border-white/80 bg-white/70 p-5 shadow-sm space-y-4 backdrop-blur-md">
+            <div className="flex items-center justify-between border-b border-pink-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">📸</span>
+                <h2 className="font-serif text-xl font-bold text-glowe-dark">Comunidad Glowe (Instagram Feed & Testimonios)</h2>
+              </div>
+              <span className="text-xs font-semibold text-glowe-muted">
+                {(siteConfigData.communityConfig || []).length} elementos
+              </span>
+            </div>
+
+            {/* Listado actual */}
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {(siteConfigData.communityConfig || []).map((item, idx) => (
+                <div key={item.id || idx} className="relative group overflow-hidden rounded-2xl border border-white/80 bg-white/80 p-2.5 shadow-sm">
+                  <div className="aspect-square w-full overflow-hidden rounded-xl bg-slate-100 mb-2">
+                    <img src={item.imageUrl} alt={item.title} className="h-full w-full object-cover" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="truncate text-xs font-bold text-glowe-dark">{item.title || '@glowe_beauty'}</p>
+                    <p className="truncate text-[10px] text-glowe-muted">{item.link || 'Sin enlace'}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveCommunityItem(idx)}
+                    className="absolute top-4 right-4 rounded-full bg-rose-500/80 p-1.5 text-xs text-white opacity-90 hover:opacity-100 hover:bg-rose-600 transition shadow"
+                    title="Eliminar publicación"
+                    aria-label="Eliminar publicación"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Añadir nuevo elemento */}
+            <div className="rounded-2xl border border-dashed border-pink-300 bg-pink-50/40 p-4 space-y-3">
+              <p className="text-xs font-bold uppercase tracking-wider text-glowe-pink-accent">
+                + Añadir publicación a la comunidad
+              </p>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <Input
+                  value={newCommunityItem.imageUrl}
+                  onChange={(e) => setNewCommunityItem((prev) => ({ ...prev, imageUrl: e.target.value }))}
+                  placeholder="URL de la imagen (requerido)"
+                  className="w-full text-xs"
+                />
+                <Input
+                  value={newCommunityItem.title}
+                  onChange={(e) => setNewCommunityItem((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Título o usuario (ej: @sofia_glowe)"
+                  className="w-full text-xs"
+                />
+                <Input
+                  value={newCommunityItem.link}
+                  onChange={(e) => setNewCommunityItem((prev) => ({ ...prev, link: e.target.value }))}
+                  placeholder="Enlace (ej: Instagram post URL)"
+                  className="w-full text-xs"
+                />
+              </div>
+              <div className="flex justify-end">
+                <Button size="sm" variant="glass" onClick={handleAddCommunityItem}>
+                  + Añadir a la lista
+                </Button>
+              </div>
+            </div>
+          </section>
+        </div>
+      )
+    }
+
     return (
       <DataTable
         title={moduleMeta[activeModule].title}
@@ -1006,13 +1375,15 @@ const orderRows = useMemo(
         primaryActionLabel={
           activeModule === 'categories'
             ? '+ Nueva categoría'
-            : activeModule === 'products'
-              ? '+ Crear producto'
-              : activeModule === 'orders'
-                ? '+ Crear compra'
-                : activeModule === 'payments'
-                  ? '+ Registrar abono'
-                  : '+ Crear usuario'
+            : activeModule === 'tags'
+              ? '+ Nueva etiqueta'
+              : activeModule === 'products'
+                ? '+ Crear producto'
+                : activeModule === 'orders'
+                  ? '+ Crear compra'
+                  : activeModule === 'payments'
+                    ? '+ Registrar abono'
+                    : '+ Crear usuario'
         }
         onPrimaryAction={moduleMeta[activeModule].action}
         onExportPdf={() => exportCurrentTable('pdf')}
@@ -1053,7 +1424,19 @@ const orderRows = useMemo(
                 >
                   <span className="flex items-center gap-3"><span className="text-base">{item.emoji}</span>{item.label}</span>
                   <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold text-glowe-pink-accent">
-                    {item.id === 'dashboard' ? '•' : item.id === 'categories' ? categories.length : item.id === 'products' ? products.length : item.id === 'orders' ? purchases.length : users.length}
+                    {item.id === 'dashboard'
+                      ? '•'
+                      : item.id === 'categories'
+                        ? categories.length
+                        : item.id === 'tags'
+                          ? tags.length
+                          : item.id === 'products'
+                            ? products.length
+                            : item.id === 'orders'
+                              ? purchases.length
+                              : item.id === 'siteConfig'
+                                ? '✓'
+                                : users.length}
                   </span>
                 </button>
               ))}
@@ -1158,6 +1541,81 @@ const orderRows = useMemo(
               <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">Imagen</label>
               <Input value={productForm.image} onChange={(event) => setProductForm((prev) => ({ ...prev, image: event.target.value }))} placeholder="URL de la imagen" className="w-full" />
             </div>
+            <div className="md:col-span-2 rounded-[1.2rem] border border-white/80 bg-white/70 p-3.5 space-y-2.5">
+              <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                Etiquetas / Tags del Producto (ej: Ojos, Rostro, Labios, Look Natural)
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {(productForm.tags || []).map((t) => (
+                  <span key={t} className="inline-flex items-center gap-1 rounded-full bg-pink-100 px-2.5 py-0.5 text-xs font-semibold text-glowe-pink-accent">
+                    #{t}
+                    <button
+                      type="button"
+                      onClick={() => setProductForm((prev) => ({ ...prev, tags: prev.tags.filter((item) => item !== t) }))}
+                      className="ml-1 text-[11px] font-bold text-pink-600 hover:text-pink-800"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {(productForm.tags || []).length === 0 && (
+                  <span className="text-xs text-glowe-muted italic">Sin etiquetas asignadas.</span>
+                )}
+              </div>
+              {/* Sugerencias de tags existentes */}
+              {tags.length > 0 && (
+                <div className="pt-1">
+                  <p className="text-[10px] font-semibold uppercase text-glowe-muted mb-1">Tags disponibles para agregar:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {tags
+                      .filter((tg) => !(productForm.tags || []).some((item) => item.toLowerCase() === tg.name.toLowerCase()))
+                      .map((tg) => (
+                        <button
+                          key={tg.id || tg.name}
+                          type="button"
+                          onClick={() => setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), tg.name] }))}
+                          className="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-medium text-glowe-dark hover:bg-pink-50"
+                        >
+                          + {tg.name}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              )}
+              {/* Añadir tag manual */}
+              <div className="flex items-center gap-2 pt-1">
+                <Input
+                  id="new-tag-input"
+                  placeholder="Escribir etiqueta y presionar añadir..."
+                  className="flex-1 text-xs py-1.5"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const val = e.target.value.trim()
+                      if (val && !(productForm.tags || []).some((item) => item.toLowerCase() === val.toLowerCase())) {
+                        setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), val] }))
+                        e.target.value = ''
+                      }
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="glass"
+                  onClick={() => {
+                    const input = document.getElementById('new-tag-input')
+                    const val = input?.value?.trim()
+                    if (val && !(productForm.tags || []).some((item) => item.toLowerCase() === val.toLowerCase())) {
+                      setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), val] }))
+                      if (input) input.value = ''
+                    }
+                  }}
+                >
+                  Añadir
+                </Button>
+              </div>
+            </div>
             <div className="md:col-span-2 flex items-center gap-3 rounded-[1.2rem] border border-white/80 bg-white/70 px-4 py-3">
               <input
                 id="product-is-recommended"
@@ -1210,6 +1668,46 @@ const orderRows = useMemo(
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Button variant="glass" fullWidth type="button" onClick={() => setCategoryModalOpen(false)} className="sm:w-auto">Cancelar</Button>
             <Button variant="gradient" fullWidth type="submit" className="sm:w-auto">{editingCategoryId ? 'Guardar cambios' : 'Crear categoría'}</Button>
+          </div>
+        </form>
+      </AdminModal>
+
+      <AdminModal isOpen={tagModalOpen} onClose={() => setTagModalOpen(false)} title="Crear Etiqueta / Tag">
+        <form onSubmit={handleTagSubmit} className="space-y-4">
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                Nombre de la Etiqueta (ej: Ojos, Rostro, Labios, Look Natural)
+              </label>
+              <Input
+                value={tagForm.name}
+                onChange={(event) => setTagForm((prev) => ({ ...prev, name: event.target.value }))}
+                placeholder="Ej. Rostro"
+                className="w-full"
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+                Descripción (Opcional)
+              </label>
+              <textarea
+                value={tagForm.description}
+                onChange={(event) => setTagForm((prev) => ({ ...prev, description: event.target.value }))}
+                rows="3"
+                className="glass-input min-h-[90px] rounded-[1.5rem] px-4 py-3 text-sm text-glowe-dark placeholder:text-glowe-muted"
+                placeholder="Descripción o propósito de esta etiqueta"
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            <Button variant="glass" fullWidth type="button" onClick={() => setTagModalOpen(false)} className="sm:w-auto">
+              Cancelar
+            </Button>
+            <Button variant="gradient" fullWidth type="submit" className="sm:w-auto">
+              Crear etiqueta
+            </Button>
           </div>
         </form>
       </AdminModal>

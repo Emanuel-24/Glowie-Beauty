@@ -121,6 +121,15 @@ Glowe Beauty/
   2. Estandarizar scripts en `package.json` de Frontend y Backend: `pnpm check` (build/syntax check), `pnpm lint` (validación de código) y `pnpm test:unit` (ejecutor de pruebas nativo Node.js).
 - **Consecuencias:** Validación rápida y ejecución de pruebas sin requerir dependencias externas adicionales.
 
+### ADR-014: Configuración Dinámica de Tienda (SiteConfig), Tags y Analítica de Producto Más Vendido
+- **Fecha:** 05/10/2026 · **Estado:** Aceptada e Implementada (FASE 1 & 2 CMS)
+- **Contexto:** La cabecera Hero, la sección de Comunidad Glowe y las etiquetas descriptivas eran estáticas en frontend. Se requería dinamismo configurable desde el Admin y analítica de ventas del producto top-seller.
+- **Decisión:**
+  1. **Modelo `SiteConfig`:** Documento único con `heroConfig` (`featuredProductId`, `floatingBadgeText`, `tagline`, `title`) y `communityConfig` (`imageUrl`, `title`, `link`). Endpoint público `GET /api/site-config` y protegido `PUT /api/site-config`.
+  2. **Etiquetas (`tags`):** Modelo `Tag` y campo `tags` en `Product`. Endpoints CRUD en `/api/tags` y selector dinámico en el formulario del producto en `Admin.jsx`. Módulo dedicado en el panel administrativo.
+  3. **Analítica Top-Seller:** Endpoint `GET /api/products/top-seller` que agrega ventas en órdenes con `status: "Completada"`. Fallback a `heroConfig.featuredProductId` o primer producto del catálogo.
+  4. **Frontend dinámico:** `HeroSection.jsx` y `SocialProof.jsx` consumen la configuración en tiempo real con fallback resiliente.
+
 ---
 
 ## 3. Estado de Módulos Clave
@@ -129,14 +138,15 @@ Glowe Beauty/
 |--------|----------|---------|--------|-----------------------|
 | Autenticación (login/registro/roles) | `Auth.jsx`, `AuthContext`, `ProtectedRoute`, `authService` | `authRoutes`, `authController` → `authService`, `User` | ✅ Backend listo / 🟡 Frontend | Implementar Merge Strategy del carrito tras login (ADR-007) |
 | Usuarios / Perfil | `Perfil.jsx`, `userService` | `userRoutes`, `userController` → `userService` | ✅ | Servicios desacoplados y listos |
-| Productos / Catálogo | `ProductGrid`, `ProductCard`, `Producto.jsx`, `productService` | `productRoutes`, `productController` → `productService`, `Product` | 🟡 | Adaptar validación de mínimo 2 imágenes (ADR-010) y modo on-demand |
-| Categorías | `categoryService`, `Maquillaje/Cabello.jsx` | `categoryRoutes`, `categoryController` → `categoryService`, `Category` | ✅ | Servicios desacoplados y listos |
+| Productos / Catálogo | `ProductGrid`, `ProductCard`, `Producto.jsx`, `productService` | `productRoutes`, `productController` → `productService`, `Product` | ✅ | Tags dinámicas y top-seller implementados |
+| Categorías y Etiquetas | `categoryService`, `tagService`, `Admin.jsx` | `categoryRoutes`, `tagRoutes`, `Category`, `Tag` | ✅ | CRUD global de categorías y etiquetas en BD |
+| Configuración Tienda (CMS) | `siteConfigService`, `HeroSection`, `SocialProof`, `Admin.jsx` | `siteConfigRoutes`, `SiteConfig` | ✅ | Hero y Comunidad administrables en panel |
 | Carrito | `CartContext`, `CartDrawer`, `QuantityStepper` | — | 🟡 | Integrar Merge Strategy con localStorage al autenticar |
 | Favoritos | `FavoritesContext`, `FavoritesDrawer`, `Favoritos.jsx` | — | ✅ | Persistencia local activa |
 | Checkout / Pedidos | `Checkout.jsx`, `orderService` | `orderRoutes`, `orderController` → `orderService`, `Order` | 🟡 | Adaptar pasarela a mensaje formateado de WhatsApp (ADR-008) |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` listos |
 | Combos y Ofertas | `Combos.jsx`, `Ofertas.jsx`, `BundlesSection` | `Product` (`type: COMBO`, `isFeaturedOffer`) | 🟡 | Conectar vistas frontend con campos del modelo |
-| Panel Admin | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | 🟡 | Incluir selector de `isFeaturedOffer` y gestión de combos |
+| Panel Admin | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ | Módulos de configuración web y tags integrados |
 
 ---
 
@@ -193,14 +203,16 @@ Glowe Beauty/
 |--------|----------|---------|--------|-----------------------|
 | Autenticación (login/registro/roles) | `Auth.jsx`, `AuthContext`, `ProtectedRoute`, `authService` | `authRoutes`, `authController` → `authService`, `User` | ✅ 100% | Pruebas de sanitización y roles pasando |
 | Usuarios / Perfil | `Perfil.jsx`, `userService` | `userRoutes`, `userController` → `userService` | ✅ 100% | Servicios desacoplados y listos |
-| Productos / Catálogo | `ProductGrid`, `ProductCard`, `Producto.jsx`, `productService` | `productRoutes`, `productController` → `productService`, `Product` | ✅ 100% | SEO, lazy loading y pruebas unitarias pasando |
+| Productos / Catálogo | `ProductGrid`, `ProductCard`, `Producto.jsx`, `productService` | `productRoutes`, `productController` → `productService`, `Product` | ✅ 100% | SEO, lazy loading, hover crossfade y tags dinámicos |
+| Configuración del Sitio (Hero & Comunidad) | `Admin.jsx`, `siteConfigService`, `HeroSection` | `siteConfigRoutes`, `siteConfigService`, `SiteConfig` | ✅ 100% | CMS dinámico de Hero, producto destacado y comunidad |
+| Etiquetas y Búsqueda Global | `Descubrir.jsx`, `ProductGrid`, `EditorialMakeup`, `HairCareSection`, `tagService` | `tagRoutes`, `tagService`, `Tag`, `Product.tags` | ✅ 100% | Búsqueda integrada, chips activos [X], tags clickeables |
 | Categorías | `categoryService`, `Maquillaje/Cabello.jsx` | `categoryRoutes`, `categoryController` → `categoryService`, `Category` | ✅ 100% | Servicios desacoplados y validados |
 | Carrito | `CartContext`, `CartDrawer`, `QuantityStepper` | — | ✅ 100% | Persistencia local activa, sincronización lista |
 | Favoritos | `FavoritesContext`, `FavoritesDrawer`, `Favoritos.jsx` | — | ✅ 100% | Persistencia local activa, lazy loading implementado |
 | Checkout / Pedidos | `Checkout.jsx`, `orderService` | `orderRoutes`, `orderController` → `orderService`, `Order` | ✅ 100% | Flujo desacoplado en servicios y validado en tests |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ 100% | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` validados |
 | Combos y Ofertas | `Combos.jsx`, `ComboDetalle.jsx`, `Ofertas.jsx`, `BundlesSection`, `GlowDeals` | `Product` (`type: COMBO`, `isFeaturedOffer`) | ✅ 100% | Vistas desacopladas, foto grupal, galería individual y ofertas destacadas |
-| Panel Admin | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ 100% | Arquitectura por capas y contratos protegidos |
+| Panel Admin | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ 100% | Gestión de Hero, Comunidad, Tags globales y asignación |
 
 ---
 
@@ -214,3 +226,8 @@ Glowe Beauty/
 | 3 | ✅ Completada | 05/10/2026 | Reducción de ruido contextual (ADR-013), scripts `check`, `lint` y `test:unit` |
 | 4 | ✅ Completada | 05/10/2026 | SEO, accesibilidad a11y, detalle de combos y ofertas (ADR-014) |
 | 5 | ✅ Completada | 05/10/2026 | Suite de pruebas de integración, skill de mantenimiento y cierre de Roadmap al 100% (ADR-015) |
+| 1 & 2 (CMS) | ✅ Completada | 05/10/2026 | Modelos `SiteConfig`, `Tag`, `Product.tags`, endpoint `/top-seller`, CMS Admin para Hero, Comunidad y Tags |
+| 3 (Hero & UI) | ✅ Completada | 05/10/2026 | Hero `#1 más vendido`, Showcase dinámico con microcard de precio COP, WhatsApp y crossfade en tarjetas |
+| 4 (Footer & Social) | ✅ Completada | 05/10/2026 | Métodos de pago estilizados (Bancolombia, Nequi, Efectivo), hover gradients de redes, limpieza de newsletter duplicado |
+| 5 (Búsqueda & Tags) | ✅ Completada | 05/10/2026 | Buscador integrado en `/descubrir`, chips de filtros activos con botón `[X]`, redirección por etiquetas desde editoriales |
+| UX/UI Polish & Mobile | ✅ Completada | 08/10/2026 | Validaciones Auth tiempo real (nombre solo letras, password 8+ chars), Hero con microcard #1 fija, badge flotante editable en Admin, cargador Orbit sin parpadeos, Footer con logo ilustrado ampliado, tipografía armonizada, logos oficiales Bancolombia/Nequi sobre fondo neutro, transiciones suaves (500ms ease-in-out) en redes sociales, Navbar mobile con brand visible y bottom nav flotante con Lucide-react |

@@ -64,12 +64,29 @@ export default function ProductCard({ product }) {
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent rounded-2xl"
         >
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-glowe-offwhite">
-            <img
-              src={galleryImages[activeImage] || product.image}
-              alt={product.name}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              loading="lazy"
-            />
+            {galleryImages.length > 1 && activeImage === 0 ? (
+              <>
+                <img
+                  src={galleryImages[0]}
+                  alt={product.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  loading="lazy"
+                />
+                <img
+                  src={galleryImages[1]}
+                  alt={`${product.name} - vista alterna`}
+                  className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:scale-105"
+                  loading="lazy"
+                />
+              </>
+            ) : (
+              <img
+                src={galleryImages[activeImage] || product.image}
+                alt={product.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                loading="lazy"
+              />
+            )}
 
             {galleryImages.length > 1 && (
               <>
@@ -77,7 +94,7 @@ export default function ProductCard({ product }) {
                   type="button"
                   onClick={showPreviousImage}
                   aria-label={`Ver imagen anterior de ${product.name}`}
-                  className="absolute left-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/20 text-lg font-bold text-white shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
+                  className="absolute left-0.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/20 text-lg font-bold text-white shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
                 >
                   <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                 </button>
@@ -85,7 +102,7 @@ export default function ProductCard({ product }) {
                   type="button"
                   onClick={showNextImage}
                   aria-label={`Ver imagen siguiente de ${product.name}`}
-                  className="absolute right-0.5 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/20 text-white shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
+                  className="absolute right-0.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/40 bg-white/20 text-white shadow-lg backdrop-blur-md transition hover:scale-105 hover:bg-white/30"
                 >
                   <ChevronRight className="h-5 w-5" aria-hidden="true" />
                 </button>

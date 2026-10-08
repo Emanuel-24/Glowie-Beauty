@@ -14,8 +14,13 @@ export default function Descubrir() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
-  const tag = searchParams.get('tag')
-  const glowFilter = tag ? quizOptions.find((o) => o.tag === tag) ?? null : null
+  const tagParam = searchParams.get('tag') || ''
+  const searchParam = searchParams.get('search') || ''
+
+  // Buscar coincidencia en quizOptions si coincide el tag
+  const glowFilter = tagParam
+    ? quizOptions.find((o) => o.tag.toLowerCase() === tagParam.toLowerCase()) ?? null
+    : null
 
   useEffect(() => {
     getProducts().then(setProducts).catch(console.error)
@@ -23,14 +28,42 @@ export default function Descubrir() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [tag])
+  }, [tagParam, searchParam])
 
   const handleSelectFilter = (option) => {
+    const nextParams = new URLSearchParams(searchParams)
     if (option) {
-      setSearchParams({ tag: option.tag })
+      nextParams.set('tag', option.tag)
     } else {
-      setSearchParams({})
+      nextParams.delete('tag')
     }
+    setSearchParams(nextParams)
+  }
+
+  const handleSearchChange = (val) => {
+    const nextParams = new URLSearchParams(searchParams)
+    if (val && val.trim()) {
+      nextParams.set('search', val)
+    } else {
+      nextParams.delete('search')
+    }
+    setSearchParams(nextParams)
+  }
+
+  const handleClearTag = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('tag')
+    setSearchParams(nextParams)
+  }
+
+  const handleClearSearch = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('search')
+    setSearchParams(nextParams)
+  }
+
+  const handleResetAll = () => {
+    setSearchParams({})
   }
 
   return (
@@ -40,7 +73,13 @@ export default function Descubrir() {
       <ProductGrid
         products={products}
         glowFilter={glowFilter}
-        onResetFilter={() => handleSelectFilter(null)}
+        activeTag={tagParam}
+        searchQuery={searchParam}
+        enableSearch={true}
+        onSearchChange={handleSearchChange}
+        onClearTag={handleClearTag}
+        onClearSearch={handleClearSearch}
+        onResetFilter={handleResetAll}
       />
     </>
   )

@@ -1,8 +1,28 @@
+import { useEffect, useState } from 'react'
 import { socialPosts } from '../../data/products'
 import NewsletterForm from '../ui/NewsletterForm'
 import Card from '../ui/Card'
+import { getSiteConfig, defaultSiteConfig } from '../../services/siteConfigService'
 
 export default function SocialProof() {
+  const [posts, setPosts] = useState(
+    socialPosts.map((p) => ({ imageUrl: p.image, title: p.user, link: 'https://instagram.com/GloweBeautyCO' }))
+  )
+
+  useEffect(() => {
+    let active = true
+
+    getSiteConfig().then((cfg) => {
+      if (active && Array.isArray(cfg?.communityConfig) && cfg.communityConfig.length > 0) {
+        setPosts(cfg.communityConfig)
+      }
+    })
+
+    return () => {
+      active = false
+    }
+  }, [])
+
   return (
     <section className="py-16 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -18,21 +38,39 @@ export default function SocialProof() {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-16">
-          {socialPosts.map((post) => (
-            <div key={post.user} className="aspect-square rounded-2xl overflow-hidden glass-panel relative group">
-              <img
-                src={post.image}
-                alt={`Look ${post.user}`}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                loading="lazy"
-              />
-              <div
-                className={`absolute inset-0 bg-glowe-dark/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold`}
-              >
-                {post.user}
+          {posts.map((post, idx) => {
+            const content = (
+              <div className="aspect-square rounded-2xl overflow-hidden glass-panel relative group cursor-pointer">
+                <img
+                  src={post.imageUrl || post.image}
+                  alt={`Look ${post.title || post.user || 'Glowe'}`}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div
+                  className="absolute inset-0 bg-glowe-dark/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold px-2 text-center"
+                >
+                  {post.title || post.user || '@GloweBeautyCO'}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+
+            if (post.link) {
+              return (
+                <a
+                  key={post.id || post.title || idx}
+                  href={post.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block"
+                >
+                  {content}
+                </a>
+              )
+            }
+
+            return <div key={post.id || post.title || idx}>{content}</div>
+          })}
         </div>
 
         <Card radius="3xl" className="p-8 sm:p-12 border-glowe-pink text-center max-w-3xl mx-auto bg-gradient-to-tr from-white/90 via-glowe-pink/30 to-white/90 shadow-xl hover:translate-y-0">

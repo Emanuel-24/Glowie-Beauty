@@ -11,7 +11,7 @@ const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const messages = {
   login: {
-    title: 'Hola, belleza',
+    title: 'Hola, bienvenid@',
     subtitle: 'Descubre una versión más luminosa de ti.',
     submit: 'Entrar a mi cuenta',
     footer: '¿Aún no tienes cuenta?',
@@ -50,10 +50,18 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
 
-  const nameValid = form.name.trim().length >= 2
+  const nameHasInvalidChars = useMemo(() => {
+    return form.name.length > 0 && !/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/.test(form.name)
+  }, [form.name])
+
+  const nameValid = form.name.trim().length >= 2 && !nameHasInvalidChars
   const emailValid = useMemo(() => emailPattern.test(form.email.trim()), [form.email])
-  const passwordValid = form.password.length >= 6
-  const passwordsMatch = form.password === form.confirmPassword && form.confirmPassword.length > 0
+  const passwordValid = form.password.length >= 8
+  const passwordsMatch = form.password === form.confirmPassword && form.confirmPassword.length >= 8
+
+  const isFormValid = mode === 'register'
+    ? (nameValid && emailValid && passwordValid && passwordsMatch)
+    : (emailValid && passwordValid)
 
   useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -80,11 +88,13 @@ export default function Auth() {
 
   const validate = () => {
     if (mode === 'register') {
+      if (nameHasInvalidChars) return 'El nombre solo puede contener letras y espacios.'
       if (!nameValid) return 'Tu nombre debe tener al menos 2 caracteres.'
-      if (!passwordValid) return 'La contraseña debe tener al menos 6 caracteres.'
+      if (!passwordValid) return 'La contraseña debe tener al menos 8 caracteres.'
       if (!passwordsMatch) return 'Las contraseñas no coinciden.'
     }
-    if (!emailValid) return 'Revisa tu correo y contraseña antes de continuar.'
+    if (!emailValid) return 'Introduce un correo electrónico válido.'
+    if (!passwordValid) return 'La contraseña debe tener al menos 8 caracteres.'
     return ''
   }
 
@@ -161,7 +171,7 @@ export default function Auth() {
 
             <div key={mode} className="animate-[fadeIn_0.4s_ease-out]">
               <div className="mb-7 text-center">
-                <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-glowe-pink-accent">Tu ritual empieza aquí</p>
+                {/* <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.28em] text-glowe-pink-accent">Tu ritual empieza aquí</p> */}
                 <h1 className="font-serif text-3xl text-glowe-dark">{copy.title}</h1>
                 <p className="mt-2 text-sm text-glowe-muted">{copy.subtitle}</p>
               </div>
@@ -175,12 +185,12 @@ export default function Auth() {
               <form className="space-y-4" onSubmit={handleSubmit} noValidate>
                 {mode === 'register' && (
                   <div>
-                    <label htmlFor="auth-name" className="sr-only">
+                    <label htmlFor="auth-name" className="block text-xs font-semibold text-glowe-dark mb-1.5">
                       Nombre completo
                     </label>
                     <div
                       className={`rounded-2xl border bg-white/70 transition-all ${
-                        touched.name && !nameValid
+                        (touched.name && !nameValid) || nameHasInvalidChars
                           ? 'border-rose-300 ring-2 ring-rose-100'
                           : nameValid && form.name
                             ? 'border-emerald-300 ring-2 ring-emerald-100'
@@ -192,21 +202,23 @@ export default function Auth() {
                         name="name"
                         type="text"
                         autoComplete="name"
-                        placeholder="Nombre completo"
+                        placeholder="Ej: Maria Gomez"
                         value={form.name}
                         onChange={setField}
-                        aria-invalid={touched.name && !nameValid}
+                        aria-invalid={(touched.name && !nameValid) || nameHasInvalidChars}
                         className="!w-full !rounded-2xl border-0 bg-transparent !shadow-none ring-0 focus:!ring-0"
                       />
                     </div>
-                    {touched.name && !nameValid && (
+                    {nameHasInvalidChars ? (
+                      <p className="mt-1.5 px-2 text-xs text-rose-600">El nombre solo puede contener letras y espacios.</p>
+                    ) : touched.name && !nameValid ? (
                       <p className="mt-1.5 px-2 text-xs text-rose-600">Tu nombre debe tener al menos 2 caracteres.</p>
-                    )}
+                    ) : null}
                   </div>
                 )}
 
                 <div>
-                  <label htmlFor="auth-email" className="sr-only">
+                  <label htmlFor="auth-email" className="block text-xs font-semibold text-glowe-dark mb-1.5">
                     Correo electrónico
                   </label>
                   <div
@@ -223,7 +235,7 @@ export default function Auth() {
                       name="email"
                       type="email"
                       autoComplete="email"
-                      placeholder="Correo electrónico"
+                      placeholder="tucorreo@gmail.com"
                       value={form.email}
                       onChange={setField}
                       aria-invalid={touched.email && !emailValid}
@@ -231,12 +243,12 @@ export default function Auth() {
                     />
                   </div>
                   {touched.email && !emailValid && (
-                    <p className="mt-1.5 px-2 text-xs text-rose-600">Introduce un correo válido.</p>
+                    <p className="mt-1.5 px-2 text-xs text-rose-600">Introduce un correo válido (ej: tucorreo@gmail.com).</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="auth-password" className="sr-only">
+                  <label htmlFor="auth-password" className="block text-xs font-semibold text-glowe-dark mb-1.5">
                     Contraseña
                   </label>
                   <div
@@ -253,7 +265,7 @@ export default function Auth() {
                       name="password"
                       type={showPassword ? 'text' : 'password'}
                       autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                      placeholder="Contraseña"
+                      placeholder="Mínimo 8 caracteres"
                       value={form.password}
                       onChange={setField}
                       aria-invalid={touched.password && !passwordValid}
@@ -262,20 +274,20 @@ export default function Auth() {
                     <button
                       type="button"
                       onClick={() => setShowPassword((current) => !current)}
-                      className="mr-2 rounded-full p-2 text-glowe-muted transition-colors hover:bg-white/80 hover:text-glowe-dark"
+                      className="mr-2 rounded-full p-2 text-glowe-muted transition-colors hover:bg-white/80 hover:text-glowe-dark cursor-pointer"
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
                     >
                       {showPassword ? 'Ocultar' : 'Ver'}
                     </button>
                   </div>
                   {touched.password && !passwordValid && (
-                    <p className="mt-1.5 px-2 text-xs text-rose-600">Usa al menos 6 caracteres.</p>
+                    <p className="mt-1.5 px-2 text-xs text-rose-600">La contraseña debe tener al menos 8 caracteres.</p>
                   )}
                 </div>
 
                 {mode === 'register' ? (
                   <div>
-                    <label htmlFor="auth-confirm" className="sr-only">
+                    <label htmlFor="auth-confirm" className="block text-xs font-semibold text-glowe-dark mb-1.5">
                       Confirmar contraseña
                     </label>
                     <div
@@ -292,7 +304,7 @@ export default function Auth() {
                         name="confirmPassword"
                         type={showPassword ? 'text' : 'password'}
                         autoComplete="new-password"
-                        placeholder="Confirmar contraseña"
+                        placeholder="Repite tu contraseña"
                         value={form.confirmPassword}
                         onChange={setField}
                         aria-invalid={touched.confirmPassword && !passwordsMatch}
@@ -300,7 +312,7 @@ export default function Auth() {
                       />
                     </div>
                     {touched.confirmPassword && !passwordsMatch && (
-                      <p className="mt-1.5 px-2 text-xs text-rose-600">Las contraseñas deben coincidir.</p>
+                      <p className="mt-1.5 px-2 text-xs text-rose-600">Las contraseñas deben coincidir y tener al menos 8 caracteres.</p>
                     )}
                   </div>
                 ) : (
@@ -315,7 +327,14 @@ export default function Auth() {
                   </div>
                 )}
 
-                <Button type="submit" fullWidth loading={submitting} disabled={submitting} variant="gradient">
+                <Button
+                  type="submit"
+                  fullWidth
+                  loading={submitting}
+                  disabled={!isFormValid || submitting}
+                  variant="gradient"
+                  className={!isFormValid ? '!opacity-50 !cursor-not-allowed' : ''}
+                >
                   {copy.submit}
                 </Button>
               </form>

@@ -21,7 +21,7 @@ export default function FindYourGlow({ glowFilter, onSelectFilter }) {
   }
 
   return (
-    <section id="encuentra-tu-glow" className="py-16 relative scroll-mt-24">
+    <section id="encuentra-tu-glow" className="pt-16 relative scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <span className="inline-block px-3 py-1 rounded-full bg-glowe-yellow text-glowe-dark font-bold text-xs uppercase tracking-wider mb-2">

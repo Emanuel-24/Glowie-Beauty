@@ -39,7 +39,7 @@ export default function Header({ products = [] }) {
       <header
         className={`sticky top-0 z-50 border-b shadow-sm transition-all duration-300 ${
           scrolled
-            ? 'bg-white/95 backdrop-blur-md border-white shadow-glass'
+            ? 'bg-white/75 backdrop-blur-md border-white shadow-glass'
             : 'glass-panel border-white/70'
         }`}
       >
@@ -52,9 +52,9 @@ export default function Header({ products = [] }) {
           <div className="flex h-16 items-center justify-between gap-2 sm:h-20">
             {/* Official Logo */}
             <button type="button" onClick={() => navigate('/')} className="flex shrink-0 items-center gap-2 sm:gap-3 group">
-              <div className="relative h-11 w-11 rounded-full bg-gradient-to-tr from-glowe-pink-dark via-glowe-yellow-dark to-glowe-blue-dark p-0.5 shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
+              <div className="relative h-11 w-11 rounded-full  from-glowe-pink-dark via-glowe-yellow-dark to-glowe-blue-dark p-0.5 shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
                 <img
-                  src="/Logo.png"
+                  src="/Logo-sencillo.webp"
                   alt="GLOWE BEAUTY Logo"
                   className="w-full h-full object-contain rounded-full bg-white p-0.5"
                   onError={(e) => {
@@ -64,11 +64,11 @@ export default function Header({ products = [] }) {
                   }}
                 />
               </div>
-              <div className="hidden min-[480px]:block text-left">
-                <span className="block font-serif text-xl font-bold tracking-tight text-glowe-dark group-hover:text-glowe-pink-accent transition-colors">
+              <div className="flex flex-col text-left">
+                <span className="block font-serif text-base sm:text-xl font-bold tracking-tight text-glowe-dark group-hover:text-glowe-pink-accent transition-colors leading-tight">
                   GLOWE BEAUTY
                 </span>
-                <span className="block text-[10px] tracking-widest text-glowe-muted uppercase font-semibold">
+                <span className="hidden min-[380px]:block text-[9px] sm:text-[10px] tracking-widest text-glowe-muted uppercase font-semibold">
                   Maquillaje & Cabello
                 </span>
               </div>
@@ -102,7 +102,7 @@ export default function Header({ products = [] }) {
                 variant="plain"
                 size="icon"
                 onClick={() => navigate('/favoritos')}
-                className="relative hidden shrink-0 text-glowe-dark hover:bg-white/80 sm:inline-flex"
+                className="relative shrink-0 text-glowe-dark hover:bg-white/80 inline-flex"
                 title="Tus Favoritos"
                 aria-label="Ir a favoritos"
               >

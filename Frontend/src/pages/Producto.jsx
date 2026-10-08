@@ -342,12 +342,12 @@ export default function Producto() {
 
             {product.tags && product.tags.length > 0 && (
               <PillGroup
-                options={product.tags.map((t) => ({ value: t, label: t }))}
+                options={product.tags.map((t) => ({ value: t, label: `#${t}` }))}
                 activeValue={null}
-                onChange={() => {}}
+                onChange={(t) => navigate(`/descubrir?tag=${encodeURIComponent(t)}`)}
                 ariaLabel="Etiquetas del producto"
                 containerClassName="flex-wrap gap-2"
-                className="rounded-full border border-white/70 bg-white/70 px-3 py-1.5 text-[11px] font-semibold text-glowe-dark shadow-sm pointer-events-none"
+                className="rounded-full border border-glowe-pink/40 bg-white/80 px-3 py-1.5 text-[11px] font-semibold text-glowe-dark shadow-xs hover:border-glowe-pink hover:bg-glowe-pink/20 hover:text-glowe-pink-accent cursor-pointer transition-all"
               />
             )}
 

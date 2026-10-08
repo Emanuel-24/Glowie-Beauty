@@ -72,6 +72,7 @@ export async function updateProduct(productId, input = {}) {
       brand: input.brand !== undefined ? input.brand : undefined,
       price: Number(input.price ?? 0),
       stock: Number(input.stock ?? 0),
+      tags: Array.isArray(input.tags) ? input.tags : undefined,
       isRecommended: Boolean(input.isRecommended),
       recommendedOrder: Number(input.recommendedOrder ?? 0),
     }),
@@ -93,5 +94,12 @@ export async function getProductById(productId) {
   const payload = response?.data ?? response ?? null
   if (payload && typeof payload === 'object') return normalizeProduct(payload)
 
+  return null
+}
+
+export async function getTopSellerProduct() {
+  const response = await apiRequest('/products/top-seller')
+  const payload = response?.data ?? response ?? null
+  if (payload && typeof payload === 'object') return normalizeProduct(payload)
   return null
 }

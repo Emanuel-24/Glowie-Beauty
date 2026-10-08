@@ -4,6 +4,7 @@ import {
   createProductRecord,
   updateProductRecord,
   deleteProductRecord,
+  getTopSellerProductRecord,
 } from '../services/productService.js';
 
 const sendResponse = (res, statusCode, success, data, message) => {
@@ -64,5 +65,14 @@ export const deleteProduct = async (req, res) => {
   } catch (error) {
     const statusCode = error.statusCode || 500;
     return sendResponse(res, statusCode, false, null, error?.message || 'No se pudo eliminar el producto');
+  }
+};
+
+export const getTopSeller = async (req, res) => {
+  try {
+    const topSeller = await getTopSellerProductRecord();
+    return sendResponse(res, 200, true, topSeller, 'Producto más vendido obtenido correctamente');
+  } catch (error) {
+    return sendResponse(res, 500, false, null, 'Error al consultar el producto más vendido');
   }
 };

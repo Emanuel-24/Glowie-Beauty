@@ -30,8 +30,8 @@ export default function HairCareSection() {
             {hairCards.map((card) => (
               <button
                 key={card.name}
-                onClick={() => navigate('/descubrir?tag=cabello')}
-                className="glass-panel p-4 rounded-2xl text-center border-glowe-blue hover:bg-white transition-colors"
+                onClick={() => navigate(`/descubrir?tag=${encodeURIComponent(card.name)}`)}
+                className="glass-panel p-4 rounded-2xl text-center border-glowe-blue hover:bg-white transition-colors cursor-pointer"
               >
                 <div className="w-12 h-12 mx-auto rounded-full bg-glowe-blue flex items-center justify-center text-xl mb-2">
                   {card.icon}

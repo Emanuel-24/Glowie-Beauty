@@ -12,6 +12,8 @@ import categoryRoutes from './routes/categoryRoutes.js';
 import orderRoutes from './routes/orderRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import tagRoutes from './routes/tagRoutes.js';
+import siteConfigRoutes from './routes/siteConfigRoutes.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -43,6 +45,8 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/tags', tagRoutes);
+app.use('/api/site-config', siteConfigRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
