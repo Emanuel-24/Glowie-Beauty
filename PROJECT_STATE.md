@@ -195,6 +195,14 @@ Glowe Beauty/
   3. **Frontend y UX:** Soporte de `brand` en `ProductCard.jsx`, `Producto.jsx` (con badge de autenticidad y distribución autorizada), `productService.js` y panel administrativo `Admin.jsx`.
   4. **Propuesta de valor:** Copy optimizado para resaltar curaduría de marcas, garantía de originalidad, cobertura de envíos en Colombia y asesoría por WhatsApp.
 
+### ADR-016: Biblioteca Unificada de Skills y Configuración de MCP
+- **Fecha:** 08/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Las skills de React, Tailwind, composición y backend estaban confinadas en `Frontend/.agents/skills/`, omitiendo su descubrimiento por el agente en la raíz. Asimismo, la configuración global de MCP se encontraba vacía.
+- **Decisión:**
+  1. **Unificación de Skills:** Sincronizar todas las 11 skills en la raíz `.agents/skills/` (`react-best-practices`, `tailwind-css-patterns`, `composition-patterns`, `nodejs-backend-patterns`, `nodejs-best-practices`, `vite`, `deploy-to-vercel`, `accessibility`, `frontend-design`, `seo`, `glowe-maintenance`).
+  2. **Protocolo en `glowe-maintenance`:** Incorporar obligación de consultar `SKILL.md` antes de cambios de UI/arquitectura e inspeccionar físicamente los assets en `public/` antes de realizar suposiciones de diseño.
+  3. **Configuración MCP:** Habilitar `mcp_config.json` global con servidor de filesystem para interoperabilidad estándar de herramientas.
+
 ---
 
 ## 3. Estado de Módulos Clave
@@ -231,3 +239,4 @@ Glowe Beauty/
 | 4 (Footer & Social) | ✅ Completada | 05/10/2026 | Métodos de pago estilizados (Bancolombia, Nequi, Efectivo), hover gradients de redes, limpieza de newsletter duplicado |
 | 5 (Búsqueda & Tags) | ✅ Completada | 05/10/2026 | Buscador integrado en `/descubrir`, chips de filtros activos con botón `[X]`, redirección por etiquetas desde editoriales |
 | UX/UI Polish & Mobile | ✅ Completada | 08/10/2026 | Validaciones Auth tiempo real (nombre solo letras, password 8+ chars), Hero con microcard #1 fija, badge flotante editable en Admin, cargador Orbit sin parpadeos, Footer con logo ilustrado ampliado, tipografía armonizada, logos oficiales Bancolombia/Nequi sobre fondo neutro, transiciones suaves (500ms ease-in-out) en redes sociales, Navbar mobile con brand visible y bottom nav flotante con Lucide-react |
+| Skills & MCP Integration | ✅ Completada | 08/10/2026 | Sincronización de 11 skills en `.agents/skills/` raíz, actualización de `glowe-maintenance/SKILL.md` (inspección de assets y consulta obligatoria de skills), configuración de `mcp_config.json` global (ADR-016) |

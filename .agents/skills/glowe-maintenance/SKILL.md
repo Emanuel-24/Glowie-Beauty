@@ -43,6 +43,8 @@ Antes de dar por finalizada **cualquier tarea** que modifique código en el repo
 - **Backend por Capas:** Controladores delgados que solo manejan `req`/`res` y delegan la lógica a `@/services/` (`authService`, `productService`, `orderService`, `paymentService`, `categoryService`, `userService`).
 - **Seguridad:** Prohibido modificar variables de entorno (`.env`) o claves secretas sin confirmación expresa del usuario.
 - **Package Manager:** Solo `pnpm`. Nunca generar `package-lock.json` ni usar `npm`/`yarn`.
+- **Invocación previa de Skills:** Antes de escribir o refactorizar código de UI, arquitectura o accesibilidad, el agente debe consultar formalmente el archivo `SKILL.md` de la skill especializada correspondiente en `.agents/skills/` (`react-best-practices`, `frontend-design`, `accessibility`, `tailwind-css-patterns`, etc.).
+- **Inspección de Assets y Cero Suposiciones:** Ante peticiones de ajuste visual de logos, banners o iconos, inspeccionar primero el asset físico (`Frontend/public/`) mediante herramientas de visualización antes de asumir cambios tipográficos o estructurales. Si persiste la ambigüedad, solicitar confirmación al usuario.
 
 ---
 
