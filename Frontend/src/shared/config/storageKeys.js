@@ -1,0 +1,5 @@
+export const TOKEN_KEY = 'glowe:token:v1'
+export const CART_KEY = 'glowe:cart:v1'
+export const FAVORITES_KEY = 'glowe:favorites:v1'
+export const USER_KEY = 'glowe:user:v1'
+export const ORDERS_KEY = 'glowe:orders:v1'

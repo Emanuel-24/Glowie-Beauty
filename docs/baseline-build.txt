@@ -1,0 +1,20 @@
+# Baseline Build Metrics - Fase 0 (Pre-Refactor)
+Fecha: 2026-10-09
+Entorno: Node v22+, Vite v5.4.11 / v5.4.21, pnpm 11.2.2
+
+## Chunks generados (Frontend/dist/assets)
+- dist/index.html:                           2.12 kB │ gzip:   0.75 kB
+- dist/assets/index-DeModxPb.css:           73.96 kB │ gzip:  12.14 kB
+- dist/assets/purify.es-DDpmou9H.js:        29.05 kB │ gzip:  11.18 kB
+- dist/assets/index.es-DICOUtEh.js:        150.81 kB │ gzip:  51.59 kB
+- dist/assets/html2canvas.esm-CBrSDip1.js: 201.42 kB │ gzip:  48.03 kB
+- dist/assets/index-qKGvHNjb.js:         1,245.71 kB │ gzip: 401.93 kB (Main Bundle)
+
+Total JS minificado en bundle inicial: ~1,627 kB (~512.7 kB gzip)
+
+## Diagnóstico del Bundle Inicial:
+1. `index.js` principal excede los 1.2 MB debido a:
+   - Ausencia de `React.lazy()` / code-splitting en rutas (`Admin.jsx`, `Descubrir.jsx`, etc.).
+   - Inclusión de dependencias pesadas de exportación (`jspdf`, `xlsx`, `html2canvas`) en el bundle principal.
+   - Dependencias circulares e imports estáticos y dinámicos cruzados en `services/api.js`.
+2. Las advertencias durante el build señalan imports dobles (estáticos + dinámicos) en `orderService.js`, `authService.js`, `productService.js`, `data/products.js`, `userService.js`.

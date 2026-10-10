@@ -23,14 +23,9 @@ Reglas permanentes del proyecto. Todos los agentes y desarrolladores deben leerl
 
 - SPA en React 18 + Vite + React Router 7 + Tailwind CSS 3.
 - Capas en `src/`:
-  - `pages/` → páginas/ruetas (composición de secciones).
-  - `components/layout/` → estructura global (Header, Footer, MobileBottomNav).
-  - `components/sections/` → bloques de página reutilizables (Hero, ProductGrid, etc.).
-  - `components/ui/` → átomos reutilizables (cart/sidebar, toasts, etc.).
-  - `context/` → estado global (Carrito, Favoritos, Toasts).
-  - `hooks/` → hooks compartidos.
-  - `services/` → acceso a datos / API (hoy mayormente mock sobre `src/data/`).
-  - `data/` → catálogo estático (productos, categorías, bundles, deals).
+  - `app/` → App Shell, punto de montaje (`main.jsx`), providers (`AppProviders.jsx`), rutas (`routes.js`), enrutador lazy con code-splitting (`router.jsx`) y layout global (`layout/AppLayout.jsx`, Header, Footer, MobileBottomNav).
+  - `features/` → módulos de dominio autónomos (`account/`, `admin/`, `auth/`, `cart/`, `favorites/`, `home/`, `newsletter/`, `orders/`, `products/`, `promotions/`) con sus páginas, componentes, servicios y hooks.
+  - `shared/` → utilidades transversales agnósticas: cliente HTTP (`shared/api/`), configuración (`shared/config/`), átomos del design system (`shared/components/ui/`), toasts (`shared/toast/`) y utilidades puras (`shared/utils/`).
   - `styles/` → CSS global + utilidades Tailwind.
 - Detalle completo en `docs/ARCHITECTURE.md`.
 
@@ -46,10 +41,10 @@ Reglas permanentes del proyecto. Todos los agentes y desarrolladores deben leerl
 
 ## 5. Reutilización de componentes
 
-- Extraer partes repetidas a `components/ui/` o `components/sections/` en lugar de duplicar JSX.
-- El newsletter ya está unificado en `components/ui/NewsletterForm.jsx` (FASE 1): todo formulario de suscripción debe usar este componente, no duplicar lógica.
+- Extraer partes repetidas a `shared/components/ui/` o subcomponentes de feature en lugar de duplicar JSX.
+- El newsletter ya está unificado en `features/newsletter/components/NewsletterForm.jsx`: todo formulario de suscripción debe usar este componente, no duplicar lógica.
 - Evitar componentes monolíticos con muchos `props` booleanos; preferir composición (ver skill `composition-patterns`).
-- **Design system en uso (FASE 1):** botones→`ui/Button.jsx`, etiquetas→`ui/Badge.jsx`, inputs→`ui/Input.jsx` (y `.glass-input`), superficies→`ui/Card.jsx`. Preferir estos atómicos antes que clases inline repetidas.
+- **Design system en uso:** botones→`shared/components/ui/Button.jsx`, etiquetas→`Badge.jsx`, inputs→`Input.jsx` (y `.glass-input`), superficies→`Card.jsx`. Preferir estos atómicos antes que clases inline repetidas.
 
 ## 6. Responsive design
 

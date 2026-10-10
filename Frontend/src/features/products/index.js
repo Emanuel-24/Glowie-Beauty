@@ -1,0 +1,15 @@
+export { default as ProductCard } from './components/ProductCard'
+export { default as ProductGrid } from './components/ProductGrid'
+export { default as SearchModal } from './components/SearchModal'
+export { default as CategoryPlayground } from './components/CategoryPlayground'
+export { default as EditorialMakeup } from './components/EditorialMakeup'
+export { default as HairCareSection } from './components/HairCareSection'
+export { default as FindYourGlow } from './components/FindYourGlow'
+
+export { useProducts } from './hooks/useProducts'
+export { useProductSearch } from './hooks/useProductSearch'
+export { variantOptionsFor, detailsFor } from './utils/variants'
+
+export * as productService from './services/productService'
+export * as categoryService from './services/categoryService'
+export * as tagService from './services/tagService'

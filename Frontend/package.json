@@ -8,9 +8,9 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "vite build",
-    "lint": "vite build",
-    "test": "node --test",
-    "test:unit": "node --test"
+    "lint": "pnpm dlx eslint src",
+    "test": "node --import ./tests/register.js --test tests/**/*.test.js",
+    "test:unit": "node --import ./tests/register.js --test tests/**/*.test.js"
   },
   "dependencies": {
     "@uiball/loaders": "^1.3.1",

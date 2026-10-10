@@ -38,7 +38,12 @@ Thumbs.db
 Proyecto/
 interactive_visual_im_*.html
 Frontend/interactive_visual_im_*.html
+docs/*.jpeg
+docs/*.jpg
+docs/*.png
+docs/*.html
 Recursos/*.jpeg
 Recursos/*.jpg
 Recursos/*.png
 Recursos/*.html
+

@@ -1,0 +1,44 @@
+name: CI - Glowe Beauty
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+jobs:
+  verify:
+    name: Build & Test Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.2.2
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check Circular Dependencies
+        run: pnpm dlx madge --circular --extensions js,jsx Frontend/src/app/main.jsx
+
+      - name: Lint Frontend
+        run: pnpm --filter ./Frontend lint
+
+      - name: Build Workspace
+        run: pnpm -r build
+
+      - name: Check Workspace
+        run: pnpm -r check
+
+      - name: Run Tests (Frontend & Backend)
+        run: pnpm -r test

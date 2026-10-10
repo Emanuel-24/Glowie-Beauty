@@ -70,3 +70,16 @@
   - [x] Implementar test para la consulta e importación de productos
 
 ---
+
+### PLAN DE REESTRUCTURACIÓN FRONTEND Y DESACOPLAMIENTO (Fases 0 a 10)
+- [x] **Fase 0: Red de Seguridad:** Baseline metrics (`docs/baseline-build.txt`), tag `pre-refactor`, CI base.
+- [x] **Fase 1: Higiene del Monorepo:** Workspace PNPM unificado, único `pnpm-lock.yaml`, scripts en raíz.
+- [x] **Fase 2: Alias y Normalización:** Configuración de alias `@/`, eliminación de imports ascendentes `../`.
+- [x] **Fase 3: Código Muerto:** Purgado de componentes huérfanos (`Navbar.jsx`, `FavoritesDrawer.jsx`).
+- [x] **Fase 4: Capa HTTP y Fin del Ciclo:** `shared/api/httpClient.js`, `tokenStorage.js`, desacoplamiento de 401.
+- [x] **Fase 5: Mocks y Datos:** Erradicación de `src/data/`, mocks aislados en fixtures y utilidades puras.
+- [x] **Fase 6: Design System y Shared:** Consolidación de UI en `shared/components/ui/`, hooks y toasts agnósticos.
+- [x] **Fase 7: Features de Dominio:** Migración a `src/features/` bajo DAG estricto (7A: hoja, 7B: catálogo, 7C: conversión).
+- [x] **Fase 8: Descomposición de Admin:** 8 pestañas modulares, exportaciones diferidas en `reportService.js`, eliminación de `Admin.jsx`.
+- [x] **Fase 9: App Shell y Router Lazy:** `src/app/` con enrutador code-splitting (`React.lazy`), eliminación de carpetas legacy (`src/pages`, `src/components`, `src/services`).
+- [x] **Fase 10: Endurecimiento y Cierre:** Reglas ESLint con límites de capa, CI con Madge (`madge --circular`), pruebas unitarias puras (29 tests) y ADR-0001.

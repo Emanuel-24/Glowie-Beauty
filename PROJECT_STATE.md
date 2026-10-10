@@ -243,6 +243,31 @@ Glowe Beauty/
 
 ---
 
+### ADR-021: Descomposición Modular de Admin.jsx, Code-Splitting Dinámico y Eliminación de src/pages/
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada (Fase 8)
+- **Contexto:** El panel de administración residía en un monolito de 2,529 líneas (`Frontend/src/pages/Admin.jsx`) que concentraba la lógica de 9 pestañas de negocio, imports pesados estáticos de `jspdf` y `xlsx` (~820 kB) en el bundle inicial, modales acoplados y componentes declarados dentro de funciones.
+- **Decisión:**
+  1. **Aislamiento Dinámico de Reportes (`reportService.js`):** Exportación con `await import('jspdf')` y `await import('xlsx')`, reduciendo el bundle inicial de 1,236 kB a 565 kB (ahorro de ~675 kB).
+  2. **Pestañas Modulares Autocontenidas (`features/admin/tabs/`):** Cada una de las 9 pestañas se extrajo a su propia carpeta con límite $\le$ 300 líneas: `DashboardTab`, `SiteConfigTab`, `CategoriesTab`, `TagsTab`, `UsersTab`, `PaymentsTab`, `ProductsTab` (con `ProductModal`), `OrdersTab`, `OffersTab` (con `OfferModal`, `GlowDealsBatchSection`, `OffersTable`, `OffersKpiCards`).
+  3. **Shell Ligera (`AdminPage.jsx`):** Reducida a 146 líneas ($\le$ 150 líneas) apoyada en `AdminSidebar.jsx`, `AdminHeader.jsx` y el hook `useAdminData.js`.
+  4. **Barrel Público (`features/admin/index.js`):** Exporta componentes y utilidades compartibles, excluyendo `AdminPage` para preservar el lazy loading de rutas.
+  5. **Purga de `src/pages/`:** Enrutamiento en `App.jsx` hacia `@/features/admin/pages/AdminPage`, eliminación completa de `Frontend/src/pages/Admin.jsx` y eliminación física del directorio vacío `src/pages/`.
+
+---
+
+### ADR-022: App Shell Definitivo, Router con Code-Splitting por Página y Erradicación de Carpetas Legacy
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada (Fase 9)
+- **Contexto:** Se requería trasladar el punto de entrada y shell principal a `Frontend/src/app/`, implementar code-splitting bajo demanda para cada página con `React.lazy()` y erradicar por completo los directorios legacy en la raíz de `src/` (`components/`, `services/`, `pages/`, `context/`, `data/`).
+- **Decisión:**
+  1. **Constantes de Rutas Inmutables (`app/routes.js`):** Objeto congelado `ROUTES` con todas las rutas y generadores funcionales de URLs (`/combos/:id`, `/producto/:id`).
+  2. **Shell de Layout (`app/layout/AppLayout.jsx`):** Reubicación de `Header.jsx`, `Footer.jsx` y `MobileBottomNav.jsx` a `src/app/layout/`. Contenedor con skip link a11y, `GlowBackground`, `ScrollToTop`, `<Outlet />` y drawer de carrito. Erradicación física de `src/components/`.
+  3. **Jerarquía de Context Providers (`app/AppProviders.jsx`):** Jerarquía estricta y documentada: `ToastProvider` -> `AuthProvider` -> `FavoritesProvider` -> `CartProvider`.
+  4. **Router con Code-Splitting (`app/router.jsx`):** `createBrowserRouter` cargando las 14 páginas mediante `lazy(() => import(...))`, protegidas con `ProtectedRoute` y envueltas en `<Suspense fallback={<PageLoader />}>`. Reducción del chunk principal a 297.59 kB (reducción del 76% respecto a los 1,236 kB iniciales).
+  5. **Punto de Entrada (`app/App.jsx` y `app/main.jsx`):** `index.html` actualizado a `/src/app/main.jsx`. Eliminación de los monolitos legacy `src/App.jsx` y `src/main.jsx`.
+  6. **Purga Total de `src/services/`:** Auditoría de 0 referencias y eliminación definitiva de `src/services/api.js` y la carpeta `src/services/`.
+
+---
+
 ## 3. Estado de Módulos Clave
 
 | Módulo | Frontend | Backend | Estado | Pendientes inmediatos |
@@ -258,7 +283,7 @@ Glowe Beauty/
 | Checkout / Pedidos / WhatsApp | `Checkout.jsx`, `orderService`, `contact.js` | `orderRoutes`, `orderController` → `orderService`, `Order`, UTF-8 headers | 🟡 Pendiente Pre-Despliegue | Corregir endpoint wa.me a api.whatsapp.com/send para evitar reemplazo  de emojis de 4 bytes en redirección (ver Sección 5). |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ 100% | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` validados |
 | Combos y Ofertas (ADR-019) | `Combos.jsx`, `ComboDetalle.jsx`, `Ofertas.jsx`, `GlowDeals`, `NewsletterForm` | `Product` (`isOffer`, `discountPercentage`, fechas), `Subscriber` (`/api/newsletter`) | ✅ 100% | Empty state automático por temporizador o catálogo vacío, captura de leads y carrusel de 3 ofertas |
-| Panel Admin (ADR-019) | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ 100% | Módulo `offers` con KPIs, toggle rápido, edición de vigencia y cálculo reactivo de descuentos |
+| Panel Admin (Fase 8 / ADR-021) | `AdminPage.jsx`, tabs modulares (`features/admin/tabs/*`), `AdminModal`, `DataTable` | Rutas protegidas y controladores delegados | ✅ 100% | Monolito de 2,529 líneas descompuesto en pestañas $\le$ 300 líneas, AdminPage $\le$ 150 líneas, reportService dinámico (ahorro ~675 kB) y `src/pages/` purgado |
 
 ---
 
@@ -283,20 +308,28 @@ Glowe Beauty/
 | Ofertas & Leads (ADR-019) | ✅ Completada | 09/10/2026 | Módulo administrativo de ofertas con cálculo reactivo de descuentos, vigencia de fechas, toggle rápido, empty state de ofertas al llegar el contador a cero o lista vacía con captura de leads conectada a backend /api/newsletter |
 | Flujo de Autorización & 401 (ADR-020) | ✅ Completada | 09/10/2026 | Sincronización multiclave de token en localStorage ('glowe:token:v1' y 'token'), inyección automática de 'Authorization: Bearer <token>', tolerancia PUT/PATCH y case-insensitive en backend, y redirección limpia a /auth en expiración 401 |
 
+| Reestructuración Fase 1 | ✅ Completada | 09/10/2026 | Consolidación de monorepo gobernado en la raíz con PNPM, pnpm-lock.yaml único y CI en GitHub Actions |
+| Reestructuración Fase 2 | ✅ Completada | 09/10/2026 | Estandarización de imports a alias `@/` y reglas de ESLint sin `../` en `Frontend/src` |
+| Reestructuración Fase 3 | ✅ Completada | 09/10/2026 | Eliminación de código muerto (`Navbar.jsx`, `FavoritesDrawer.jsx`) con 0 referencias rotas |
+| Reestructuración Fase 4 | ✅ Completada | 09/10/2026 | Desacoplamiento de capa HTTP (`shared/config`, `shared/api`), fin de dependencia circular y gestión 401 centralizada |
+| Reestructuración Fase 5 | ✅ Completada | 09/10/2026 | Saneamiento total de `src/data/`, aislamiento de mocks en fixtures/servicios y utilidades puras (`whatsapp.js`, `text.js`) |
+| Reestructuración Fase 6 | ✅ Completada | 09/10/2026 | Consolidación de Design System en `shared/components/ui/`, hooks atómicos (`shared/hooks/`), toast (`shared/toast/`) y componentes a `features/` |
+| Reestructuración Bloque 7A | ✅ Completada | 09/10/2026 | Migración de features hoja (auth, favorites, cart, newsletter) con 0 dependencias cruzadas y 0 ciclos Madge |
+| Reestructuración Bloque 7B | ✅ Completada | 09/10/2026 | Migración de catálogo y promociones (products, promotions), desacoplamiento de Header y 0 ciclos Madge |
+| Reestructuración Bloque 7C | ✅ Completada | 09/10/2026 | Migración de conversión y usuario (orders, account, home), eliminación de `components/sections/` y 0 ciclos |
+| Reestructuración Bloque 8A | ✅ Completada | 09/10/2026 | Descomposición inicial de Admin: aislamiento dinámico de `jspdf`/`xlsx` en `reportService.js` (ahorro ~675 kB en chunk inicial), reubicación de `userService.js`/`paymentService.js`, extracción de `constants.js` y 5 pestañas modulares (`SiteConfigTab`, `TagsTab`, `CategoriesTab`, `UsersTab`, `PaymentsTab`) |
+| Reestructuración Bloque 8B | ✅ Completada | 09/10/2026 | Conclusión de Fase 8: extracción de `OrdersTab`, `OffersTab` (con `OfferModal`, `GlowDealsBatchSection`, `OffersTable`, `OffersKpiCards`), `ProductsTab` (con `ProductModal`), `DashboardTab`, `AdminSidebar`, `AdminHeader`, `useAdminData`. Creación de `AdminPage.jsx` shell (146 líneas), barrel público `features/admin/index.js`, actualización de rutas en `App.jsx`, eliminación de `Frontend/src/pages/Admin.jsx` y purga total del directorio `src/pages/` |
+| Reestructuración Fase 9 | ✅ Completada | 09/10/2026 | App shell definitivo y Router con code-splitting: creación de `app/routes.js` (inmutable), migración de layout a `app/layout/` (`AppLayout.jsx`, `Header`, `Footer`, `MobileBottomNav`), orquestador `app/AppProviders.jsx`, enrutador `app/router.jsx` con 14 páginas en `lazy()`, montaje `app/main.jsx`, `index.html` actualizado. Eliminación definitiva de `src/App.jsx`, `src/main.jsx`, `src/services/api.js` y de las carpetas legacy `src/components/` y `src/services/`. Reducción del chunk principal a 297.59 kB (-76%) |
+| Reestructuración Fase 10 | ✅ Completada | 09/10/2026 | Endurecimiento y Cierre: ESLint con límites estrictos de capa (`shared` no importa de `features`/`app`, `features` no importa de `app`), CI GitHub Actions con verificación circular `madge --circular`, retiro definitivo de claves legacy de token en `tokenStorage.js` operando únicamente sobre `glowe:token:v1`, suite de pruebas unitarias para utilidades puras (`cartTotals`, `variants`, `whatsapp`) con 29 pruebas y 0 dependencias extra vía Node test runner, registro de ADR-0001 (`docs/adr/0001-feature-driven-frontend.md`) y cierre definitivo del Plan de Reestructuración al 100%. |
+
 ---
 
 ## 5. Deuda Técnica y Pendientes Previos al Despliegue
 
-### 📌 PENDIENTE: Corrupción de Emojis de 4 bytes en URLs de WhatsApp (`wa.me` vs `api.whatsapp.com`)
-- **Estado:** Pendiente de implementación antes del despliegue a producción.
-- **Descripción del Error:**
-  Al abrir enlaces generados con el dominio acortador `https://wa.me/<telefono>?text=<mensaje>`, los emojis del plano suplementario/astral de 4 bytes en UTF-8 (como 👜 o 🛍️) pueden degradarse y mostrar el carácter de reemplazo Unicode `` (`U+FFFD`) en la pantalla previa o URL redirigida:
-  > *"¡Hola Glowe Beauty!  Me gustaría consultar sobre productos, cotizar y hacer un pedido."*
-  Esto ocurre porque el servicio de redirección HTTP 302 en los servidores de `wa.me` de Meta decodifica el query string con un parser limitado a Plano 0 (BMP / 3 bytes) antes de redirigir a la aplicación.
-- **Solución Técnica a Implementar:**
-  1. En `Frontend/src/data/contact.js`, configurar por defecto la generación de URLs hacia el endpoint canónico directo de la API:
-     `https://api.whatsapp.com/send/?phone=<cleanPhone>&text=<encodedText>`
-     (en lugar de `https://wa.me/...`), saltando el proxy de redirección intermedia de `wa.me`.
-  2. Sustituir los literales crudos de emojis en los archivos fuente de configuración por secuencias de escape Unicode explícitas (ej. `\u{1F45C}` para 👜, `\u{2728}` para ✨) para asegurar independencia total de la codificación de archivos en Windows.
+### ✅ RESUELTO: Corrupción de Emojis de 4 bytes en URLs de WhatsApp
+- **Estado:** Resuelto en Fase 5 de la Reestructuración técnica (`Frontend/src/shared/utils/whatsapp.js`).
+- **Implementación:**
+  1. Uso del endpoint canónico directo `https://api.whatsapp.com/send/?phone=<cleanPhone>&text=<encodedText>` saltando el proxy con fallo de UTF-8 de `wa.me`.
+  2. Secuencias Unicode explícitas y normalización `normalize('NFC')` antes del encoding, con preservación validada en los tests del Backend y build de Frontend.
 
 
