@@ -79,6 +79,28 @@ const productSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    isOffer: {
+      type: Boolean,
+      default: false,
+    },
+    discountPercentage: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 100,
+    },
+    offerStartDate: {
+      type: Date,
+      default: null,
+    },
+    offerEndDate: {
+      type: Date,
+      default: null,
+    },
+    isFeaturedOffer: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,

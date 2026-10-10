@@ -7,6 +7,7 @@ import { normalizeOrder } from '../src/services/orderService.js';
 import { normalizePayment } from '../src/services/paymentService.js';
 import { normalizeTag } from '../src/services/tagService.js';
 import { normalizeSiteConfig } from '../src/services/siteConfigService.js';
+import { validateEmail } from '../src/services/subscriberService.js';
 
 describe('Suite de Integración y Servicios Críticos - Backend Glowe Beauty', () => {
 
@@ -173,6 +174,116 @@ describe('Suite de Integración y Servicios Críticos - Backend Glowe Beauty', (
       assert.equal(normalized.heroConfig.title, 'Glow Natural Everyday');
       assert.equal(normalized.communityConfig.length, 1);
       assert.equal(normalized.communityConfig[0].title, '@glow1');
+    });
+  });
+
+  describe('6. Integración WhatsApp y Preservación de UTF-8 de 4 bytes / Emojis (ADR-008)', () => {
+    // Implementación canónica de codificación para verificación
+    const sanitizeUnicodeString = (text) => {
+      if (typeof text !== 'string') return '';
+      const normalized = text.normalize('NFC');
+      if (typeof normalized.toWellFormed === 'function') {
+        return normalized.toWellFormed();
+      }
+      return normalized.replace(
+        /(?:[\uD800-\uDBFF](?![\uDC00-\uDFFF]))|(?:[^\uD800-\uDBFF]|^)([\uDC00-\uDFFF])/g,
+        '\uFFFD'
+      );
+    };
+
+    const encodeWhatsAppText = (text) => {
+      const safeText = sanitizeUnicodeString(text);
+      return encodeURIComponent(safeText);
+    };
+
+    const formatOrderWhatsAppMessage = ({ orderId, customerName, total, paymentMethod }) => {
+      const formattedTotal = total != null ? `$${Number(total).toLocaleString('es-CO')} COP` : '';
+      return [
+        '🛍️ *¡Hola Glowe Beauty! Acabo de registrar mi pedido.*',
+        '',
+        `📋 *Orden:* #${orderId}`,
+        `👤 *Cliente:* ${customerName}`,
+        `💳 *Método de pago:* ${paymentMethod}`,
+        `✨ *Total:* ${formattedTotal}`,
+        '',
+        '¿Podrían confirmarme la disponibilidad? ¡Muchas gracias! 💖',
+      ].join('\n');
+    };
+
+    test('preserva emojis de 4 bytes y secuencias Unicode compuestas sin corrupción', () => {
+      const complexEmojiMessage = '🛍️ ✨ 💄 🌸 💖 📦 💵 📍 👤 💬 ⚡ 💎 🧴';
+      const encoded = encodeWhatsAppText(complexEmojiMessage);
+      const decoded = decodeURIComponent(encoded);
+
+      assert.equal(decoded, complexEmojiMessage, 'El mensaje decodificado debe coincidir exactamente con los emojis originales');
+      // Cada emoji astral de 4 bytes en UTF-8 genera 4 secuencias percent-encoded (%F0%9F...)
+      assert.ok(encoded.includes('%F0%9F%9B%8D') || encoded.includes('%F0%9F%92%84'), 'Debe contener secuencias de 4 bytes percent-encoded');
+    });
+
+    test('normaliza texto con caracteres combinados y surrogate pairs', () => {
+      const textWithAccentsAndSurrogates = '¡Hola! Maquillaje, atención y sérum capilar 🌸 para Bogotá.';
+      const encoded = encodeWhatsAppText(textWithAccentsAndSurrogates);
+      const decoded = decodeURIComponent(encoded);
+
+      assert.equal(decoded, textWithAccentsAndSurrogates);
+    });
+
+    test('construye la URL estructurada de WhatsApp de acuerdo con ADR-008', () => {
+      const orderMessage = formatOrderWhatsAppMessage({
+        orderId: 'GLOWE-123456',
+        customerName: 'Valentina Restrepo',
+        total: 85000,
+        paymentMethod: 'Contra entrega 💵',
+      });
+
+      const phone = '573000000000';
+      const encoded = encodeWhatsAppText(orderMessage);
+      const url = `https://wa.me/${phone}?text=${encoded}`;
+
+      assert.ok(url.startsWith('https://wa.me/573000000000?text='), 'Debe iniciar con el esquema wa.me y el número limpio');
+      assert.ok(url.includes('%F0%9F%9B%8D'), 'Debe contener el emoji de bolsa 🛍️ codificado');
+      assert.ok(url.includes('GLOWE-123456'), 'Debe incluir el código de orden');
+      assert.equal(decodeURIComponent(url.split('text=')[1]), orderMessage, 'La URL decodificada debe restaurar el mensaje íntegro');
+    });
+  });
+
+  describe('7. Captura de Leads / Newsletter y Normalización de Ofertas (ADR-012)', () => {
+    test('validateEmail valida correctamente correos válidos e inválidos', () => {
+      assert.equal(validateEmail('cliente@glowe.com'), true);
+      assert.equal(validateEmail('sofia.perez@dominio.co'), true);
+      assert.equal(validateEmail('invalido-sin-arroba'), false);
+      assert.equal(validateEmail('sin-punto@dominio'), false);
+      assert.equal(validateEmail(''), false);
+      assert.equal(validateEmail(null), false);
+    });
+
+    test('normalizeProduct calcula porcentaje de descuento y estado de oferta correctamente', () => {
+      const rawWithDiscount = {
+        _id: 'prod_offer_1',
+        name: 'Paleta Rubor SunKissed',
+        price: 44000,
+        oldPrice: 55000,
+        isFeaturedOffer: true,
+      };
+
+      const normalized = normalizeProduct(rawWithDiscount);
+
+      assert.equal(normalized.id, 'prod_offer_1');
+      assert.equal(normalized.isOffer, true, 'Debe marcarse como oferta si oldPrice > price');
+      assert.equal(normalized.discountPercentage, 20, 'Debe calcular 20% de descuento');
+      assert.equal(normalized.isFeaturedOffer, true);
+    });
+
+    test('batchUpdateFeaturedOffersRecord valida requerimiento de offerEndDate', async () => {
+      const { batchUpdateFeaturedOffersRecord } = await import('../src/services/productService.js');
+      await assert.rejects(
+        async () => {
+          await batchUpdateFeaturedOffersRecord({});
+        },
+        {
+          message: 'La fecha de finalización es obligatoria',
+        }
+      );
     });
   });
 

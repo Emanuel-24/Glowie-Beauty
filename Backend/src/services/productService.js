@@ -24,6 +24,16 @@ export const normalizeProduct = (product = {}) => {
     description: product.description ?? product.desc ?? '',
     isRecommended: Boolean(product.isRecommended),
     recommendedOrder: Number(product.recommendedOrder ?? 0),
+    isOffer: Boolean(product.isOffer || (product.oldPrice != null && Number(product.oldPrice) > Number(product.price))),
+    discountPercentage: Number(
+      product.discountPercentage ||
+        (product.oldPrice != null && Number(product.oldPrice) > Number(product.price)
+          ? Math.round(((Number(product.oldPrice) - Number(product.price)) / Number(product.oldPrice)) * 100)
+          : 0)
+    ),
+    offerStartDate: product.offerStartDate ? new Date(product.offerStartDate).toISOString() : null,
+    offerEndDate: product.offerEndDate ? new Date(product.offerEndDate).toISOString() : null,
+    isFeaturedOffer: Boolean(product.isFeaturedOffer),
   };
 };
 
@@ -60,6 +70,11 @@ export const createProductRecord = async (payload = {}) => {
     rating: Number(payload.rating ?? 4.8),
     isRecommended: Boolean(payload.isRecommended),
     recommendedOrder: Number(payload.recommendedOrder ?? 0),
+    isOffer: Boolean(payload.isOffer),
+    discountPercentage: Number(payload.discountPercentage ?? 0),
+    offerStartDate: payload.offerStartDate ? new Date(payload.offerStartDate) : null,
+    offerEndDate: payload.offerEndDate ? new Date(payload.offerEndDate) : null,
+    isFeaturedOffer: Boolean(payload.isFeaturedOffer),
   };
 
   if (!nextProduct.image && nextProduct.images.length === 0) {
@@ -97,6 +112,11 @@ export const updateProductRecord = async (id, payload = {}) => {
     rating: payload.rating !== undefined ? Number(payload.rating) : currentProduct.rating,
     isRecommended: payload.isRecommended !== undefined ? Boolean(payload.isRecommended) : Boolean(currentProduct.isRecommended),
     recommendedOrder: payload.recommendedOrder !== undefined ? Number(payload.recommendedOrder ?? 0) : Number(currentProduct.recommendedOrder ?? 0),
+    isOffer: payload.isOffer !== undefined ? Boolean(payload.isOffer) : Boolean(currentProduct.isOffer),
+    discountPercentage: payload.discountPercentage !== undefined ? Number(payload.discountPercentage) : Number(currentProduct.discountPercentage ?? 0),
+    offerStartDate: payload.offerStartDate !== undefined ? (payload.offerStartDate ? new Date(payload.offerStartDate) : null) : currentProduct.offerStartDate,
+    offerEndDate: payload.offerEndDate !== undefined ? (payload.offerEndDate ? new Date(payload.offerEndDate) : null) : currentProduct.offerEndDate,
+    isFeaturedOffer: payload.isFeaturedOffer !== undefined ? Boolean(payload.isFeaturedOffer) : Boolean(currentProduct.isFeaturedOffer),
   };
 
   if (Array.isArray(payload.images) && payload.images.length > 0) {
@@ -106,6 +126,60 @@ export const updateProductRecord = async (id, payload = {}) => {
 
   const product = await Product.findByIdAndUpdate(id, nextValues, { new: true, runValidators: true });
   return normalizeProduct(product);
+};
+
+export const getActiveOffersRecord = async () => {
+  const now = new Date();
+  const products = await Product.find({
+    $or: [
+      { isOffer: true },
+      { $and: [{ oldPrice: { $ne: null } }, { $expr: { $gt: ['$oldPrice', '$price'] } }] },
+    ],
+  }).lean();
+
+  const activeOffers = products.filter((product) => {
+    if (product.offerStartDate && new Date(product.offerStartDate) > now) {
+      return false;
+    }
+    if (product.offerEndDate && new Date(product.offerEndDate) < now) {
+      return false;
+    }
+    return true;
+  });
+
+  return activeOffers.map(normalizeProduct);
+};
+
+export const batchUpdateFeaturedOffersRecord = async ({ offerEndDate, productIds = null } = {}) => {
+  if (!offerEndDate) {
+    const error = new Error('La fecha de finalización es obligatoria');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const endDate = new Date(offerEndDate);
+  if (Number.isNaN(endDate.getTime())) {
+    const error = new Error('Formato de fecha inválido');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const query = {};
+  if (Array.isArray(productIds) && productIds.length > 0) {
+    query._id = { $in: productIds };
+  } else {
+    query.isFeaturedOffer = true;
+  }
+
+  await Product.updateMany(query, {
+    $set: {
+      offerEndDate: endDate,
+      isOffer: true,
+    },
+  });
+
+  const updatedProducts = await Product.find(query).lean();
+  return updatedProducts.map(normalizeProduct);
 };
 
 export const deleteProductRecord = async (id) => {

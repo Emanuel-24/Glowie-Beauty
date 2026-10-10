@@ -34,6 +34,7 @@ Thumbs.db
 .agents/scratch/
 
 # Archivos multimedia y recursos pesados de diseño
+*.zip
 Proyecto/
 interactive_visual_im_*.html
 Frontend/interactive_visual_im_*.html

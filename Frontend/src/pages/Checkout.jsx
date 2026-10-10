@@ -9,6 +9,7 @@ import Button from '../components/ui/Button'
 import Input from '../components/ui/Input'
 import Card from '../components/ui/Card'
 import { usePageMeta } from '@/hooks'
+import { getOrderWhatsAppUrl } from '@/data/contact'
 
 const formatCOP = (value) => `$${Number(value).toLocaleString('es-CO')}`
 
@@ -112,9 +113,19 @@ export default function Checkout() {
         customer: customerName,
       }
 
+      const whatsappUrl = getOrderWhatsAppUrl({
+        orderId,
+        customerName,
+        items,
+        total,
+        paymentMethod: payment,
+        address: form.address.trim(),
+        city: form.city.trim(),
+      })
+
       addOrder(orderBrief)
       clearCart()
-      setSuccess({ id: orderId, customerName })
+      setSuccess({ id: orderId, customerName, whatsappUrl })
     } catch {
       showToast('No pudimos procesar tu pedido', 'Revisa tus datos e inténtalo de nuevo.')
     } finally {
@@ -133,11 +144,25 @@ export default function Checkout() {
           <p className="text-sm text-glowe-muted">
             Gracias, {success.customerName}. Tu orden{' '}
             <span className="font-bold text-glowe-dark">{success.id}</span> fue registrada con
-            éxito. Te contactaremos para coordinar la entrega.
+            éxito en nuestro sistema.
           </p>
-          <Button fullWidth onClick={() => navigate('/')}>
-            Volver al inicio
-          </Button>
+          <div className="pt-2 space-y-3">
+            {success.whatsappUrl && (
+              <a
+                href={success.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full"
+              >
+                <Button variant="primary" fullWidth className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-200">
+                  Continuar a WhatsApp 💬
+                </Button>
+              </a>
+            )}
+            <Button variant="glass" fullWidth onClick={() => navigate('/')}>
+              Volver al inicio
+            </Button>
+          </div>
         </Card>
       </div>
     )

@@ -16,10 +16,18 @@ export default function ProductGrid({
   products,
   glowFilter,
   activeTag = null,
+  maquillajeTag = null,
+  cabelloTag = null,
+  curaduriaTag = null,
+  descubrirTag = null,
   searchQuery = '',
   enableSearch = false,
   onSearchChange,
   onClearTag,
+  onClearMaquillaje,
+  onClearCabello,
+  onClearCuraduria,
+  onClearDescubrir,
   onClearSearch,
   onResetFilter,
   categoryLock = null,
@@ -29,26 +37,50 @@ export default function ProductGrid({
   const [category, setCategory] = useState('all')
   const sectionRef = useRef(null)
 
+  const effectiveMaquillaje = maquillajeTag || curaduriaTag || activeTag
+  const effectiveDescubrir = descubrirTag || glowFilter?.tag
+
   const filtered = products.filter((p) => {
     // 1. Filtrar por Categoría
     const matchCategory = categoryLock
       ? p.category === categoryLock
       : category === 'all' || p.category === category
 
-    // 2. Filtrar por Etiqueta / Tag
-    let matchTag = true
-    if (activeTag) {
-      const searchTag = activeTag.trim().toLowerCase()
+    // 2. Filtrar por Maquillaje (Filtro de Origen)
+    let matchMaquillaje = true
+    if (effectiveMaquillaje) {
+      const searchTag = effectiveMaquillaje.trim().toLowerCase()
       const hasInTags = Array.isArray(p.tags) && p.tags.some((t) => t?.toLowerCase().includes(searchTag))
       const hasInName = p.name?.toLowerCase().includes(searchTag)
       const hasInCategory = p.category?.toLowerCase().includes(searchTag)
       const hasInBrand = p.brand?.toLowerCase().includes(searchTag)
-      matchTag = hasInTags || hasInName || hasInCategory || hasInBrand
-    } else if (glowFilter) {
-      matchTag = Array.isArray(p.tags) && p.tags.includes(glowFilter.tag)
+      const hasInDesc = p.desc?.toLowerCase().includes(searchTag)
+      matchMaquillaje = hasInTags || hasInName || hasInCategory || hasInBrand || hasInDesc
     }
 
-    // 3. Filtrar por Búsqueda de texto (nombre, marca o tag)
+    // 3. Filtrar por Cabello (Filtro de Origen Capilar)
+    let matchCabello = true
+    if (cabelloTag) {
+      const searchTag = cabelloTag.trim().toLowerCase()
+      const hasInTags = Array.isArray(p.tags) && p.tags.some((t) => t?.toLowerCase().includes(searchTag))
+      const hasInName = p.name?.toLowerCase().includes(searchTag)
+      const hasInCategory = p.category?.toLowerCase().includes(searchTag)
+      const hasInBrand = p.brand?.toLowerCase().includes(searchTag)
+      const hasInDesc = p.desc?.toLowerCase().includes(searchTag)
+      matchCabello = hasInTags || hasInName || hasInCategory || hasInBrand || hasInDesc
+    }
+
+    // 4. Filtrar por Descubrir / Glow (Filtro Secundario)
+    let matchDescubrir = true
+    if (effectiveDescubrir) {
+      const searchSubtag = effectiveDescubrir.trim().toLowerCase()
+      const hasInTags = Array.isArray(p.tags) && p.tags.some((t) => t?.toLowerCase().includes(searchSubtag))
+      const hasInName = p.name?.toLowerCase().includes(searchSubtag)
+      const hasInDesc = p.desc?.toLowerCase().includes(searchSubtag)
+      matchDescubrir = hasInTags || hasInName || hasInDesc
+    }
+
+    // 5. Filtrar por Búsqueda de texto (nombre, marca o tag)
     let matchSearch = true
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.trim().toLowerCase()
@@ -60,7 +92,7 @@ export default function ProductGrid({
       matchSearch = inName || inBrand || inCategory || inTags || inDesc
     }
 
-    return matchCategory && matchTag && matchSearch
+    return matchCategory && matchMaquillaje && matchCabello && matchDescubrir && matchSearch
   })
 
   useEffect(() => {
@@ -98,14 +130,14 @@ export default function ProductGrid({
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {enableSearch && (
               <div className="relative min-w-[220px] max-w-full">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-glowe-muted pointer-events-none" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-glowe-muted pointer-events-none z-10" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
                   placeholder="Buscar por nombre, marca o tag..."
                   aria-label="Buscar productos por nombre, marca o tag"
-                  className="w-full rounded-full border border-white/80 bg-white/70 pl-9 pr-8 py-2 text-xs text-glowe-dark placeholder:text-glowe-muted focus:outline-none focus:ring-2 focus:ring-glowe-pink-accent shadow-sm backdrop-blur-sm transition-all"
+                  className="w-full rounded-full border border-white/80 bg-white/70 pl-9 pr-8 py-2 text-xs text-glowe-dark placeholder:text-glowe-muted focus:outline-none focus:ring-2 focus:ring-glowe-pink-dark shadow-sm backdrop-blur-sm transition-all"
                 />
                 {searchQuery && (
                   <button
@@ -141,19 +173,45 @@ export default function ProductGrid({
         </div>
 
         {/* Indicador Visual de Filtros Activos (Pills con botón X) */}
-        {(activeTag || searchQuery || (glowFilter && !activeTag)) && (
+        {(effectiveMaquillaje || cabelloTag || effectiveDescubrir || searchQuery) && (
           <div className="mb-6 flex flex-wrap items-center gap-2">
             <span className="text-xs font-semibold text-glowe-muted mr-1">Filtros activos:</span>
-            {activeTag && (
+            {effectiveMaquillaje && (
               <span className="inline-flex items-center gap-1.5 rounded-full bg-rose-50 border border-glowe-pink px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
-                🏷️ Etiqueta: <span className="capitalize text-glowe-pink-accent">{activeTag}</span>
+                💄 Maquillaje: <span className="capitalize text-glowe-pink-accent">{effectiveMaquillaje}</span>
                 <button
                   type="button"
-                  onClick={onClearTag}
-                  aria-label={`Eliminar filtro de etiqueta ${activeTag}`}
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
+                  onClick={onClearMaquillaje || onClearCuraduria || onClearTag}
+                  aria-label={`Eliminar filtro de Maquillaje ${effectiveMaquillaje}`}
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-pink-dark hover:text-white transition-colors cursor-pointer shadow-xs"
                 >
-                  ✕
+                  <X className="w-3 h-3"/>
+                </button>
+              </span>
+            )}
+            {cabelloTag && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 border border-glowe-blue px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
+                💇‍♀️ Cabello: <span className="capitalize text-glowe-blue-accent">{cabelloTag}</span>
+                <button
+                  type="button"
+                  onClick={onClearCabello}
+                  aria-label={`Eliminar filtro de Cabello ${cabelloTag}`}
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  <X className="w-3 h-3"/>
+                </button>
+              </span>
+            )}
+            {glowFilter && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 border border-glowe-blue px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
+                {glowFilter.icon || '✨'} <span>{glowFilter.label || glowFilter.tag}</span>
+                <button
+                  type="button"
+                  onClick={onClearDescubrir || onResetFilter}
+                  aria-label={`Eliminar filtro de descubrir ${glowFilter.label || glowFilter.tag}`}
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  <X className="w-3 h-3"/>
                 </button>
               </span>
             )}
@@ -164,22 +222,9 @@ export default function ProductGrid({
                   type="button"
                   onClick={onClearSearch}
                   aria-label="Limpiar término de búsqueda"
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-yellow-accent hover:text-white transition-colors cursor-pointer shadow-xs"
                 >
-                  ✕
-                </button>
-              </span>
-            )}
-            {glowFilter && !activeTag && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-cyan-50 border border-glowe-blue px-3 py-1 text-xs font-bold text-glowe-dark shadow-xs animate-[fadeIn_.2s_ease-out]">
-                {glowFilter.icon} <span>{glowFilter.label}</span>
-                <button
-                  type="button"
-                  onClick={onResetFilter}
-                  aria-label="Limpiar filtro"
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-rose-500 hover:text-white transition-colors cursor-pointer shadow-xs"
-                >
-                  ✕
+                  <X className="w-3 h-3"/>
                 </button>
               </span>
             )}

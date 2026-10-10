@@ -13,6 +13,7 @@ const router = express.Router();
 router.get('/', protect, requireAdmin, getOrders);
 router.post('/', protect, createOrder);
 router.put('/:id', protect, requireAdmin, updateOrder);
+router.patch('/:id', protect, requireAdmin, updateOrder);
 router.delete('/:id', protect, requireAdmin, deleteOrder);
 
 export default router;

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
@@ -7,6 +7,7 @@ import Button from '../ui/Button'
 import Card from '../ui/Card'
 import { getSiteConfig, defaultSiteConfig } from '../../services/siteConfigService'
 import { getTopSellerProduct } from '../../services/productService'
+import { getWhatsAppUrl } from '@/data/contact'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -141,7 +142,7 @@ export default function HeroSection() {
                 <span className="text-glowe-yellow-accent text-base">⚡</span> Envíos a Toda Colombia
               </div>
               <a
-                href="https://wa.me/573000000000?text=Hola%2C%20me%20gustar%C3%ADa%20recibir%20asesor%C3%ADa%20personalizada%20para%20elegir%20mis%20productos."
+                href={getWhatsAppUrl('¡Hola! Me gustaría recibir asesoría personalizada para elegir mis productos ✨')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 hover:text-emerald-500 transition-colors"
@@ -217,14 +218,27 @@ export default function HeroSection() {
               {/* Micro tarjeta 1: El más vendido (información fija en código) */}
               <Card
                 radius="2xl"
-                className="absolute -top-3 -left-2 sm:-top-4 sm:-left-6 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform max-w-[170px] sm:max-w-none z-20 border border-white/80"
+                className="absolute -top-3 -left-2 sm:-top-4 sm:-left-6 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center gap-2.5 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform max-w-[170px] sm:max-w-none z-20 border border-white/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent"
                 style={{ opacity: 1 }}
-                onClick={() => navigate('/producto/1')}
+                role="button"
+                tabIndex={0}
+                aria-label={`Ver producto más vendido: ${featuredProduct?.name || 'Glow Natural Everyday'}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (featuredId) navigate(`/producto/${featuredId}`)
+                    else goToDiscover()
+                  }
+                }}
+                onClick={() => {
+                  if (featuredId) navigate(`/producto/${featuredId}`)
+                  else goToDiscover()
+                }}
               >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-glowe-yellow flex items-center justify-center text-xs sm:text-sm shadow-inner shrink-0">⭐</div>
                 <div className="min-w-0">
                   <span className="block text-[11px] sm:text-xs font-bold text-glowe-dark leading-tight">#1 Más vendido</span>
-                  <span className="block text-[9px] sm:text-[10px] text-glowe-muted hover:text-glowe-pink-accent transition-colors font-medium truncate">
+                  <span className="block text-[9px] sm:text-[10px] text-glowe-muted hover:transition-colors font-medium truncate">
                     ¡Lo que más prefieren!
                   </span>
                 </div>
@@ -233,8 +247,18 @@ export default function HeroSection() {
               {/* Micro tarjeta 2: Precio del producto destacado*/}
               <Card
                 radius="2xl"
-                className="absolute -bottom-3 -right-2 sm:-bottom-6 sm:-right-4 px-3 py-2 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform border border-white/80 max-w-[175px] sm:max-w-none z-20"
+                className="absolute -bottom-3 -right-2 sm:-bottom-6 sm:-right-4 px-3 py-2 sm:px-4 sm:py-3 flex items-center gap-2 sm:gap-3 shadow-lg hero-float-card bg-white/95 opacity-100 cursor-pointer hover:scale-105 transition-transform border border-white/80 max-w-[175px] sm:max-w-none z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent"
                 style={{ opacity: 1 }}
+                role="button"
+                tabIndex={0}
+                aria-label={`Ver producto: ${featuredProduct?.name || 'Glow Natural Everyday'} con precio ${featuredPriceFormatted}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    if (featuredId) navigate(`/producto/${featuredId}`)
+                    else goToDiscover()
+                  }
+                }}
                 onClick={() => {
                   if (featuredId) navigate(`/producto/${featuredId}`)
                   else goToDiscover()

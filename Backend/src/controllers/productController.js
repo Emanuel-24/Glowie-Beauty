@@ -5,6 +5,8 @@ import {
   updateProductRecord,
   deleteProductRecord,
   getTopSellerProductRecord,
+  getActiveOffersRecord,
+  batchUpdateFeaturedOffersRecord,
 } from '../services/productService.js';
 
 const sendResponse = (res, statusCode, success, data, message) => {
@@ -76,3 +78,36 @@ export const getTopSeller = async (req, res) => {
     return sendResponse(res, 500, false, null, 'Error al consultar el producto más vendido');
   }
 };
+
+export const getOffers = async (req, res) => {
+  try {
+    const offers = await getActiveOffersRecord();
+    return sendResponse(res, 200, true, offers, 'Listado de ofertas activas obtenido con éxito');
+  } catch (error) {
+    return sendResponse(res, 500, false, null, 'Error al consultar las ofertas activas');
+  }
+};
+
+export const batchUpdateOffers = async (req, res) => {
+  try {
+    const { offerEndDate, productIds } = req.body || {};
+    const updatedProducts = await batchUpdateFeaturedOffersRecord({ offerEndDate, productIds });
+    return sendResponse(
+      res,
+      200,
+      true,
+      updatedProducts,
+      'Ofertas destacadas actualizadas masivamente con éxito'
+    );
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return sendResponse(
+      res,
+      statusCode,
+      false,
+      null,
+      error?.message || 'Error al actualizar las ofertas en lote'
+    );
+  }
+};
+

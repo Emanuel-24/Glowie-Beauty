@@ -25,6 +25,16 @@ const normalizeProduct = (product = {}) => {
     tags: Array.isArray(product.tags) ? product.tags : [],
     isRecommended: Boolean(product.isRecommended),
     recommendedOrder: Number(product.recommendedOrder ?? 0),
+    isOffer: Boolean(product.isOffer || (product.oldPrice != null && Number(product.oldPrice) > Number(product.price))),
+    discountPercentage: Number(
+      product.discountPercentage ||
+        (product.oldPrice != null && Number(product.oldPrice) > Number(product.price)
+          ? Math.round(((Number(product.oldPrice) - Number(product.price)) / Number(product.oldPrice)) * 100)
+          : 0)
+    ),
+    offerStartDate: product.offerStartDate || null,
+    offerEndDate: product.offerEndDate || null,
+    isFeaturedOffer: Boolean(product.isFeaturedOffer),
   }
 }
 
@@ -65,21 +75,67 @@ export async function createProduct(input = {}) {
 }
 
 export async function updateProduct(productId, input = {}) {
+  const body = {
+    ...input,
+    brand: input.brand !== undefined ? input.brand : undefined,
+    price: input.price !== undefined ? Number(input.price ?? 0) : undefined,
+    oldPrice: input.oldPrice !== undefined ? (input.oldPrice === null ? null : Number(input.oldPrice)) : undefined,
+    stock: input.stock !== undefined ? Number(input.stock ?? 0) : undefined,
+    tags: Array.isArray(input.tags) ? input.tags : undefined,
+    isRecommended: input.isRecommended !== undefined ? Boolean(input.isRecommended) : undefined,
+    recommendedOrder: input.recommendedOrder !== undefined ? Number(input.recommendedOrder ?? 0) : undefined,
+    isOffer: input.isOffer !== undefined ? Boolean(input.isOffer) : undefined,
+    discountPercentage: input.discountPercentage !== undefined ? Number(input.discountPercentage) : undefined,
+    offerStartDate: input.offerStartDate !== undefined ? input.offerStartDate : undefined,
+    offerEndDate: input.offerEndDate !== undefined ? input.offerEndDate : undefined,
+    isFeaturedOffer: input.isFeaturedOffer !== undefined ? Boolean(input.isFeaturedOffer) : undefined,
+  }
+
+  // Clean undefined keys
+  Object.keys(body).forEach((key) => body[key] === undefined && delete body[key])
+
   const response = await apiRequest(`/products/${productId}`, {
     method: 'PUT',
-    body: JSON.stringify({
-      ...input,
-      brand: input.brand !== undefined ? input.brand : undefined,
-      price: Number(input.price ?? 0),
-      stock: Number(input.stock ?? 0),
-      tags: Array.isArray(input.tags) ? input.tags : undefined,
-      isRecommended: Boolean(input.isRecommended),
-      recommendedOrder: Number(input.recommendedOrder ?? 0),
-    }),
+    body: JSON.stringify(body),
   })
 
   const payload = response?.data ?? response ?? null
   return payload ? normalizeProduct(payload) : null
+}
+
+export async function getOffers() {
+  try {
+    const response = await apiRequest('/products/offers')
+    const payload = response?.data ?? response ?? []
+    const list = Array.isArray(payload) ? payload : Array.isArray(payload.offers) ? payload.offers : []
+    return list.map(normalizeProduct)
+  } catch (err) {
+    console.warn('Fallback local para ofertas:', err)
+    const all = await getProducts()
+    return all.filter((p) => p.isOffer || (p.oldPrice != null && p.oldPrice > p.price))
+  }
+}
+
+export async function updateProductOffer(productId, offerData = {}) {
+  return updateProduct(productId, {
+    isOffer: Boolean(offerData.isOffer),
+    price: offerData.price !== undefined ? Number(offerData.price) : undefined,
+    oldPrice: offerData.oldPrice !== undefined ? (offerData.oldPrice === null ? null : Number(offerData.oldPrice)) : undefined,
+    discountPercentage: offerData.discountPercentage !== undefined ? Number(offerData.discountPercentage) : undefined,
+    offerStartDate: offerData.offerStartDate !== undefined ? offerData.offerStartDate : undefined,
+    offerEndDate: offerData.offerEndDate !== undefined ? offerData.offerEndDate : undefined,
+    isFeaturedOffer: offerData.isFeaturedOffer !== undefined ? Boolean(offerData.isFeaturedOffer) : undefined,
+  })
+}
+
+export async function batchUpdateFeaturedOffers({ offerEndDate, productIds = null } = {}) {
+  const response = await apiRequest('/products/batch-offers', {
+    method: 'PATCH',
+    body: JSON.stringify({ offerEndDate, productIds }),
+  })
+  const payload = response?.data ?? response ?? []
+  const list = Array.isArray(payload) ? payload : []
+  return list.map(normalizeProduct)
 }
 
 export async function deleteProduct(productId) {

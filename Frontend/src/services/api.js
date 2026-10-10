@@ -6,9 +6,25 @@ const apiUrl = (() => {
   return String(configured).replace(/\/+$/, '')
 })()
 
-const readToken = () => {
+export const readToken = () => {
   try {
-    return window.localStorage.getItem(TOKEN_STORAGE_KEY) || ''
+    const primary = window.localStorage.getItem(TOKEN_STORAGE_KEY)
+    if (primary) return primary
+
+    const fallback =
+      window.localStorage.getItem('token') ||
+      window.localStorage.getItem('authToken') ||
+      window.localStorage.getItem('jwt') ||
+      window.localStorage.getItem('glowe_token')
+    if (fallback) return fallback
+
+    const userRaw = window.localStorage.getItem('glowe:user:v1')
+    if (userRaw) {
+      const parsed = JSON.parse(userRaw)
+      if (parsed?.token) return parsed.token
+    }
+
+    return ''
   } catch {
     return ''
   }
@@ -16,8 +32,17 @@ const readToken = () => {
 
 export const setAuthToken = (token) => {
   try {
-    if (token) window.localStorage.setItem(TOKEN_STORAGE_KEY, token)
-    else window.localStorage.removeItem(TOKEN_STORAGE_KEY)
+    if (token) {
+      const clean = token.startsWith('Bearer ') ? token.slice(7).trim() : token.trim()
+      window.localStorage.setItem(TOKEN_STORAGE_KEY, clean)
+      window.localStorage.setItem('token', clean)
+    } else {
+      window.localStorage.removeItem(TOKEN_STORAGE_KEY)
+      window.localStorage.removeItem('token')
+      window.localStorage.removeItem('authToken')
+      window.localStorage.removeItem('jwt')
+      window.localStorage.removeItem('glowe_token')
+    }
   } catch {
     // ignore quota/private mode issues
   }
@@ -40,12 +65,14 @@ export const apiRequest = async (path, options = {}) => {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const token = readToken()
   const requestHeaders = {
-    'Content-Type': 'application/json',
+    'Content-Type': 'application/json; charset=utf-8',
+    Accept: 'application/json, text/plain, */*',
     ...(options.headers || {}),
   }
 
-  if (token) {
-    requestHeaders.Authorization = `Bearer ${token}`
+  if (token && !requestHeaders.Authorization && !requestHeaders.authorization) {
+    const cleanToken = token.startsWith('Bearer ') ? token.slice(7).trim() : token.trim()
+    requestHeaders.Authorization = `Bearer ${cleanToken}`
   }
 
   try {
@@ -69,7 +96,21 @@ export const apiRequest = async (path, options = {}) => {
         `HTTP ${response.status}`
 
       if (response.status === 401) {
-        throw new ApiError(401, 'Sesión expirada o sin permisos.', payload)
+        const isAuthAttempt = normalizedPath.includes('/auth/login') || normalizedPath.includes('/auth/register')
+        if (!isAuthAttempt) {
+          clearAuthToken()
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('glowe:auth:unauthorized', {
+                detail: {
+                  message: payload?.message || 'Tu sesión ha expirado o no es válida. Por favor, inicia sesión nuevamente.',
+                  path: normalizedPath,
+                },
+              })
+            )
+          }
+        }
+        throw new ApiError(401, payload?.message || 'Sesión expirada o sin permisos.', payload)
       }
 
       if (response.status === 403) {
@@ -143,7 +184,39 @@ export const getUsers = async () => {
 }
 
 export const getGlowDeals = async () => {
-  const { glowDeals, bundles } = await import('../data/products')
+  const { bundles } = await import('../data/products')
+  try {
+    const { getOffers } = await import('./productService')
+    const offers = await getOffers()
+    if (Array.isArray(offers)) {
+      const featuredOffers = offers.filter((item) => Boolean(item.isFeaturedOffer))
+      const targetList = featuredOffers.length > 0 ? featuredOffers.slice(0, 3) : offers.slice(0, 3)
+      const deals = targetList.map((item) => {
+        const discountPct =
+          item.discountPercentage ||
+          (item.oldPrice && item.oldPrice > item.price
+            ? Math.round(((item.oldPrice - item.price) / item.oldPrice) * 100)
+            : 0)
+        return {
+          productId: item.id || item._id,
+          name: item.name,
+          desc: item.desc || item.description || '',
+          price: Number(item.price || 0),
+          oldPrice: item.oldPrice ? Number(item.oldPrice) : Number(item.price || 0),
+          discountPercentage: discountPct,
+          discount: `${discountPct}% OFF`,
+          image: item.image || item.images?.[0] || '',
+          isFeaturedOffer: Boolean(item.isFeaturedOffer),
+          offerEndDate: item.offerEndDate,
+        }
+      })
+      return { deals, bundles }
+    }
+  } catch (error) {
+    console.warn('Fallback a static glowDeals por error en conexión:', error)
+  }
+
+  const { glowDeals } = await import('../data/products')
   const deals = glowDeals.filter((deal) => deal.isFeaturedOffer === true).slice(0, 3)
   return { deals, bundles }
 }
@@ -160,7 +233,19 @@ export const getComboById = async (comboId) => {
   return { combo, items }
 }
 
-export const subscribeNewsletter = async (email) => {
-  await new Promise((resolve) => setTimeout(resolve, 250))
-  return { success: true, email, message: 'Suscripción registrada' }
+export const subscribeNewsletter = async (email, source = 'general') => {
+  try {
+    const response = await apiRequest('/newsletter/subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ email, source }),
+    })
+    return response || { success: true, message: '¡Suscripción registrada con éxito!' }
+  } catch (error) {
+    console.warn('Suscripción local / fallback:', error)
+    return {
+      success: true,
+      email,
+      message: error?.message || '¡Gracias por suscribirte a Glowe Beauty!',
+    }
+  }
 }

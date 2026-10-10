@@ -316,12 +316,12 @@ export const categories = [
 ]
 
 export const editorialCategories = [
-  { icon: '👄', name: 'Labios', sub: 'Tintas & Gloss', tag: 'renovar', border: 'border-t-glowe-pink' },
-  { icon: '✨', name: 'Rostro', sub: 'Bases & Sérums', tag: 'radiante', border: 'border-t-glowe-pink-dark' },
-  { icon: '👁️', name: 'Ojos', sub: 'Pestañinas & Sombra', tag: 'natural', border: 'border-t-glowe-yellow-dark' },
-  { icon: '🌸', name: 'Rubor', sub: 'Líquidos & Crema', tag: 'radiante', border: 'border-t-rose-300' },
+  { icon: '👄', name: 'Labios', sub: 'Tintas & Gloss', tag: 'renovar', border: 'border-t-rose-300' },
+  { icon: '✨', name: 'Rostro', sub: 'Bases & Sérums', tag: 'radiante', border: 'border-t-glowe-yellow-dark' },
+  { icon: '👁️', name: 'Ojos', sub: 'Pestañinas & Sombra', tag: 'natural', border: 'border-t-orange-700/60' },
+  { icon: '🌸', name: 'Rubor', sub: 'Líquidos & Crema', tag: 'radiante', border: 'border-t-glowe-pink' },
   { icon: '🎨', name: 'Bases', sub: 'Cobertura Ligera', tag: 'natural', border: 'border-t-glowe-blue-dark' },
-  { icon: '👝', name: 'Accesorios', sub: 'Brochas & Cosmetiqueras', tag: 'regalo', border: 'border-t-purple-300' },
+  { icon: '👜', name: 'Accesorios', sub: 'Brochas & Cosmetiqueras', tag: 'regalo', border: 'border-t-orange-300/60' },
 ]
 
 export const hairCards = [

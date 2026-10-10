@@ -64,28 +64,26 @@ export default function ProductCard({ product }) {
           className="block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent rounded-2xl"
         >
           <div className="relative aspect-square rounded-2xl overflow-hidden bg-glowe-offwhite">
-            {galleryImages.length > 1 && activeImage === 0 ? (
-              <>
-                <img
-                  src={galleryImages[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  loading="lazy"
-                />
-                <img
-                  src={galleryImages[1]}
-                  alt={`${product.name} - vista alterna`}
-                  className="absolute inset-0 w-full h-full object-cover opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-hover:scale-105"
-                  loading="lazy"
-                />
-              </>
-            ) : (
-              <img
-                src={galleryImages[activeImage] || product.image}
-                alt={product.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                loading="lazy"
-              />
+            <img
+              src={galleryImages[activeImage] || product.image}
+              alt={product.name}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+            />
+
+            {galleryImages.length > 1 && (
+              <div className="absolute bottom-2.5 inset-x-0 flex justify-center gap-1.5 z-10 pointer-events-none">
+                {galleryImages.map((_, idx) => (
+                  <span
+                    key={idx}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      activeImage === idx
+                        ? 'w-4 bg-white shadow-xs'
+                        : 'w-1.5 bg-white/60 backdrop-blur-xs'
+                    }`}
+                  />
+                ))}
+              </div>
             )}
 
             {galleryImages.length > 1 && (

@@ -1,19 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom'
+import { getWhatsAppUrl } from '@/data/contact'
 
 const socialLinks = [
   {
     name: 'Instagram',
-    href: 'https://instagram.com',
+    href: 'https://www.instagram.com/glowebeautytienda?psln=MTk2ZWswY2I3dWhnbw==',
     activeBg: 'bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600',
   },
   {
-    name: 'TikTok',
-    href: 'https://tiktok.com',
-    activeBg: 'bg-black',
-  },
-  {
     name: 'WhatsApp',
-    href: 'https://wa.me/573000000000?text=Hola%2C%20me%20gustar%C3%ADa%20recibir%20asesor%C3%ADa%20personalizada%20para%20elegir%20mis%20productos.',
+    href: getWhatsAppUrl(),
     activeBg: 'bg-emerald-500',
   },
 ]
@@ -35,7 +31,7 @@ const columns = [
       { label: 'Preguntas Frecuentes' },
       { label: 'Políticas de Envío Colombia' },
       { label: 'Cambios y Devoluciones' },
-      { label: 'Contacto directo WhatsApp' },
+      { label: 'Contacto directo WhatsApp', href: getWhatsAppUrl(), external: true },
     ],
   },
 ]
@@ -44,7 +40,7 @@ export default function Footer() {
   const navigate = useNavigate()
 
   return (
-    <footer className="relative border-t border-glowe-pink/40 bg-white/80 pt-16 pb-[calc(8rem+env(safe-area-inset-bottom))] text-glowe-dark xl:pb-12">
+    <footer className="relative border-t border-glowe-pink/40 bg-white/80 pt-6 pb-[calc(8rem+env(safe-area-inset-bottom))] text-glowe-dark xl:pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand Info */}
@@ -77,7 +73,7 @@ export default function Footer() {
           </div>
 
           {columns.map((col) => (
-            <div key={col.title}>
+            <div className="relative top-4" key={col.title}>
               <h2 className="font-bold text-xs uppercase tracking-wider text-glowe-pink-accent mb-4">
                 {col.title}
               </h2>
@@ -88,6 +84,15 @@ export default function Footer() {
                       <button onClick={() => navigate(link.to)} className="hover:text-glowe-dark transition-colors">
                         {link.label}
                       </button>
+                    ) : link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-glowe-dark transition-colors"
+                      >
+                        {link.label}
+                      </a>
                     ) : (
                       <a href="#" className="hover:text-glowe-dark transition-colors">
                         {link.label}
@@ -100,7 +105,7 @@ export default function Footer() {
           ))}
 
           {/* Síguenos */}
-          <div>
+          <div className="relative top-4">
             <h2 className="font-bold text-xs uppercase tracking-wider text-glowe-pink-accent mb-4">Síguenos</h2>
             <p className="text-xs text-glowe-muted mb-4">Únete a nuestra comunidad en redes sociales:</p>
             <div className="flex flex-wrap items-center gap-2.5 text-xs font-semibold text-glowe-dark">

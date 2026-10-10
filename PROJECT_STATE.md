@@ -203,6 +203,44 @@ Glowe Beauty/
   2. **Protocolo en `glowe-maintenance`:** Incorporar obligación de consultar `SKILL.md` antes de cambios de UI/arquitectura e inspeccionar físicamente los assets en `public/` antes de realizar suposiciones de diseño.
   3. **Configuración MCP:** Habilitar `mcp_config.json` global con servidor de filesystem para interoperabilidad estándar de herramientas.
 
+### ADR-017: Integración WhatsApp y Preservación de UTF-8 de 4 Bytes y Emojis
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Las URLs y mensajes salientes a la Web/API de WhatsApp (wa.me / api.whatsapp.com) requieren soporte íntegro de caracteres Unicode de 4 bytes (emojis como 🛍️, 💄, 🌸, ✨, 💖, 📦, 💵, 📍, etc.) sin corrupción de surrogate pairs ni errores de codificación.
+- **Decisión:**
+  1. **Sanitización y Normalización Unicode:** Función `sanitizeUnicodeString` aplicando normalización NFC (`normalize('NFC')`) y verificación de cadenas bien formadas (`toWellFormed()` nativo con fallback a sustitución segura de surrogates huérfanos).
+  2. **Codificación Robusta:** Función `encodeWhatsAppText` y `getWhatsAppUrl` aplicando `encodeURIComponent()` para garantizar percent-encoding estricto en estándares `wa.me` y `api.whatsapp.com`.
+  3. **Mensajes Estructurados (ADR-008):** Generación de plantilla de mensaje para checkout (`formatOrderWhatsAppMessage` / `getOrderWhatsAppUrl`) con emojis UTF-8, desglose de productos y botón interactivo directo en pantalla de confirmación.
+  4. **Headers UTF-8 Estandarizados:** Middleware en Backend Express configurando `Content-Type: application/json; charset=utf-8` y cliente Frontend `api.js` enviando `charset=utf-8`.
+  5. **Pruebas de Integración:** Suite automatizada en `Backend/tests/integration.test.js` validando la preservación de secuencias Unicode y caracteres de 4 bytes.
+
+### ADR-018: Acumulación y Desacoplamiento de Filtros en Vista Descubrir (Maquillaje, Cabello y Descubrir)
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Al navegar desde las secciones de origen "Maquillaje" (ej. "Labios") o "Cabello" (ej. "Aceites Capilares") y pulsar un filtro en "Descubrir" (ej. "Radiante"), la etiqueta previa se sobreescribía o se etiquetaba incorrectamente.
+- **Decisión:**
+  1. **Separación de Claves de Origen:** Clave `maquillaje` para el filtro de cosméticos (`EditorialMakeup`), clave `cabello` para el filtro capilar (`HairCareSection`), y `descubrir` para el filtro secundario (`FindYourGlow`).
+  2. **Acumulación de Filtros:** `Descubrir.jsx` preserva el parámetro de origen activo (`maquillaje` o `cabello`) al seleccionar o alternar opciones en `FindYourGlow` (`?cabello=Aceites%20Capilares&descubrir=radiante`).
+  3. **Reemplazo Exclusivo:** Cambiar la opción de Descubrir (ej. de "Radiante" a "Mate" / "Renovar") actualiza únicamente la clave `descubrir`, manteniendo intacto el filtro de origen (`?cabello=Aceites%20Capilares&descubrir=mate`).
+  4. **Intersección y UI en ProductGrid:** El catálogo evalúa `matchMaquillaje && matchCabello && matchDescubrir` simultáneamente y expone chips activos independientes (`[💄 Maquillaje: Labios ✕]`, `[💇‍♀️ Cabello: Aceites Capilares ✕]` y `[✨ Verme Radiante ✕]`) con estilos visuales temáticos y eliminación desacoplada.
+
+### ADR-019: Módulo de Ofertas Dinámicas, Empty State y Captura de Leads (Newsletter)
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Las ofertas públicas eran estáticas y no contemplaban estado vacío al agotarse o culminar el temporizador. Tampoco existía administración de descuentos, vigencia ni captura persistida de correos interesados.
+- **Decisión:**
+  1. **Empty State & Temporizador a Cero:** Cuando no existan productos con oferta activa o cuando el temporizador de cuenta regresiva llegue a 0 (`isExpired: true`), la vista pública (`GlowDeals.jsx`) transiciona automáticamente al Empty State con copy adaptativo.
+  2. **Captura de Leads y Validación:** `NewsletterForm.jsx` reforzado con validación regex estricta de correo, feedback visual con loading spinner, toast y conectividad HTTP a `/api/newsletter/subscribe`.
+  3. **Modelo `Subscriber` en Backend:** Modelo Mongoose `Subscriber.js` (`email`, `source`, `active`), servicio `subscriberService.js` con sanitización y endpoints protegidos/públicos en `/api/newsletter`.
+  4. **Campos de Oferta en `Product`:** Inclusión de `isOffer`, `discountPercentage`, `offerStartDate`, `offerEndDate`, `isFeaturedOffer`. Endpoints `/api/products/offers` y normalizadores automáticos de porcentajes y precios tachados.
+  5. **Panel Admin de Ofertas:** Módulo dedicado `offers` en `Admin.jsx` con KPI metrics, filtros por estado, listado completo con toggle rápido directo (switch sin abrir modal), y modal de configuración con cálculo reactivo bidireccional entre precio regular, porcentaje y precio con descuento.
+
+### ADR-020: Estandarización de Autorización JWT, Interceptor Central y Manejo Controlado de 401
+- **Fecha:** 09/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** En el panel administrativo (`Admin.jsx`), las peticiones a endpoints protegidos (actualización de productos, compras, usuarios) fallaban con error `401 (Unauthorized)` debido a inconsistencias en las claves de almacenamiento del token en `localStorage`, ausencia de inyección automática estandarizada en encabezados y falta de tolerancia en los métodos HTTP PUT/PATCH y validación de roles en backend.
+- **Decisión:**
+  1. **Coincidencia y Sincronización de Claves:** `api.js` y `AuthContext.jsx` sincronizan bidireccionalmente el token en `'glowe:token:v1'` y `'token'`, con fallback resiliente a `'authToken'`, `'jwt'`, `'glowe_token'` y el objeto de sesión `glowe:user:v1.token`.
+  2. **Inyección Automática en `apiRequest`:** El helper central inyecta `Authorization: Bearer <token>` (sanitizando prefijos duplicados) en cualquier solicitud que no lo incluya explícitamente.
+  3. **Backend Middleware & Rutas:** `auth.js` soporta extracción insensible a mayúsculas/minúsculas de headers y valida el rol `'admin'` con normalización `.toLowerCase()`. Rutas de productos (`/api/products/:id`), órdenes y usuarios aceptan indistintamente `PUT` y `PATCH`.
+  4. **Manejo Controlado de 401 y Redirección Limpia:** `api.js` detecta respuestas 401 (excluyendo logins fallidos), limpia tokens, emite el evento global `glowe:auth:unauthorized`, guarda el mensaje en `sessionStorage` y `AuthContext` redirige limpiamente a `/auth` notificando al usuario mediante Toast de sesión expirada.
+
 ---
 
 ## 3. Estado de Módulos Clave
@@ -213,14 +251,14 @@ Glowe Beauty/
 | Usuarios / Perfil | `Perfil.jsx`, `userService` | `userRoutes`, `userController` → `userService` | ✅ 100% | Servicios desacoplados y listos |
 | Productos / Catálogo | `ProductGrid`, `ProductCard`, `Producto.jsx`, `productService` | `productRoutes`, `productController` → `productService`, `Product` | ✅ 100% | SEO, lazy loading, hover crossfade y tags dinámicos |
 | Configuración del Sitio (Hero & Comunidad) | `Admin.jsx`, `siteConfigService`, `HeroSection` | `siteConfigRoutes`, `siteConfigService`, `SiteConfig` | ✅ 100% | CMS dinámico de Hero, producto destacado y comunidad |
-| Etiquetas y Búsqueda Global | `Descubrir.jsx`, `ProductGrid`, `EditorialMakeup`, `HairCareSection`, `tagService` | `tagRoutes`, `tagService`, `Tag`, `Product.tags` | ✅ 100% | Búsqueda integrada, chips activos [X], tags clickeables |
+| Etiquetas y Búsqueda Global | `Descubrir.jsx`, `ProductGrid`, `EditorialMakeup`, `HairCareSection`, `tagService` | `tagRoutes`, `tagService`, `Tag`, `Product.tags` | ✅ 100% | Filtros acumulativos diferenciados (maquillaje + cabello + descubrir), chips activos [X] desacoplados (ADR-018) |
 | Categorías | `categoryService`, `Maquillaje/Cabello.jsx` | `categoryRoutes`, `categoryController` → `categoryService`, `Category` | ✅ 100% | Servicios desacoplados y validados |
 | Carrito | `CartContext`, `CartDrawer`, `QuantityStepper` | — | ✅ 100% | Persistencia local activa, sincronización lista |
 | Favoritos | `FavoritesContext`, `FavoritesDrawer`, `Favoritos.jsx` | — | ✅ 100% | Persistencia local activa, lazy loading implementado |
-| Checkout / Pedidos | `Checkout.jsx`, `orderService` | `orderRoutes`, `orderController` → `orderService`, `Order` | ✅ 100% | Flujo desacoplado en servicios y validado en tests |
+| Checkout / Pedidos / WhatsApp | `Checkout.jsx`, `orderService`, `contact.js` | `orderRoutes`, `orderController` → `orderService`, `Order`, UTF-8 headers | 🟡 Pendiente Pre-Despliegue | Corregir endpoint wa.me a api.whatsapp.com/send para evitar reemplazo  de emojis de 4 bytes en redirección (ver Sección 5). |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ 100% | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` validados |
-| Combos y Ofertas | `Combos.jsx`, `ComboDetalle.jsx`, `Ofertas.jsx`, `BundlesSection`, `GlowDeals` | `Product` (`type: COMBO`, `isFeaturedOffer`) | ✅ 100% | Vistas desacopladas, foto grupal, galería individual y ofertas destacadas |
-| Panel Admin | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ 100% | Gestión de Hero, Comunidad, Tags globales y asignación |
+| Combos y Ofertas (ADR-019) | `Combos.jsx`, `ComboDetalle.jsx`, `Ofertas.jsx`, `GlowDeals`, `NewsletterForm` | `Product` (`isOffer`, `discountPercentage`, fechas), `Subscriber` (`/api/newsletter`) | ✅ 100% | Empty state automático por temporizador o catálogo vacío, captura de leads y carrusel de 3 ofertas |
+| Panel Admin (ADR-019) | `Admin.jsx`, `AdminModal`, `DataTable`, `Pagination` | Rutas protegidas y controladores delegados | ✅ 100% | Módulo `offers` con KPIs, toggle rápido, edición de vigencia y cálculo reactivo de descuentos |
 
 ---
 
@@ -240,3 +278,25 @@ Glowe Beauty/
 | 5 (Búsqueda & Tags) | ✅ Completada | 05/10/2026 | Buscador integrado en `/descubrir`, chips de filtros activos con botón `[X]`, redirección por etiquetas desde editoriales |
 | UX/UI Polish & Mobile | ✅ Completada | 08/10/2026 | Validaciones Auth tiempo real (nombre solo letras, password 8+ chars), Hero con microcard #1 fija, badge flotante editable en Admin, cargador Orbit sin parpadeos, Footer con logo ilustrado ampliado, tipografía armonizada, logos oficiales Bancolombia/Nequi sobre fondo neutro, transiciones suaves (500ms ease-in-out) en redes sociales, Navbar mobile con brand visible y bottom nav flotante con Lucide-react |
 | Skills & MCP Integration | ✅ Completada | 08/10/2026 | Sincronización de 11 skills en `.agents/skills/` raíz, actualización de `glowe-maintenance/SKILL.md` (inspección de assets y consulta obligatoria de skills), configuración de `mcp_config.json` global (ADR-016) |
+| WhatsApp UTF-8 & Emojis | 🟡 Pendiente | 09/10/2026 | Soporte UTF-8 integrado; pendiente migrar endpoint wa.me a api.whatsapp.com/send para solventar carácter de reemplazo en redirecciones (ADR-017) |
+| Filtros Descubrir (ADR-018) | ✅ Completada | 09/10/2026 | Separación de claves maquillaje y descubrir, acumulación simultánea y pills desacoplados |
+| Ofertas & Leads (ADR-019) | ✅ Completada | 09/10/2026 | Módulo administrativo de ofertas con cálculo reactivo de descuentos, vigencia de fechas, toggle rápido, empty state de ofertas al llegar el contador a cero o lista vacía con captura de leads conectada a backend /api/newsletter |
+| Flujo de Autorización & 401 (ADR-020) | ✅ Completada | 09/10/2026 | Sincronización multiclave de token en localStorage ('glowe:token:v1' y 'token'), inyección automática de 'Authorization: Bearer <token>', tolerancia PUT/PATCH y case-insensitive en backend, y redirección limpia a /auth en expiración 401 |
+
+---
+
+## 5. Deuda Técnica y Pendientes Previos al Despliegue
+
+### 📌 PENDIENTE: Corrupción de Emojis de 4 bytes en URLs de WhatsApp (`wa.me` vs `api.whatsapp.com`)
+- **Estado:** Pendiente de implementación antes del despliegue a producción.
+- **Descripción del Error:**
+  Al abrir enlaces generados con el dominio acortador `https://wa.me/<telefono>?text=<mensaje>`, los emojis del plano suplementario/astral de 4 bytes en UTF-8 (como 👜 o 🛍️) pueden degradarse y mostrar el carácter de reemplazo Unicode `` (`U+FFFD`) en la pantalla previa o URL redirigida:
+  > *"¡Hola Glowe Beauty!  Me gustaría consultar sobre productos, cotizar y hacer un pedido."*
+  Esto ocurre porque el servicio de redirección HTTP 302 en los servidores de `wa.me` de Meta decodifica el query string con un parser limitado a Plano 0 (BMP / 3 bytes) antes de redirigir a la aplicación.
+- **Solución Técnica a Implementar:**
+  1. En `Frontend/src/data/contact.js`, configurar por defecto la generación de URLs hacia el endpoint canónico directo de la API:
+     `https://api.whatsapp.com/send/?phone=<cleanPhone>&text=<encodedText>`
+     (en lugar de `https://wa.me/...`), saltando el proxy de redirección intermedia de `wa.me`.
+  2. Sustituir los literales crudos de emojis en los archivos fuente de configuración por secuencias de escape Unicode explícitas (ej. `\u{1F45C}` para 👜, `\u{2728}` para ✨) para asegurar independencia total de la codificación de archivos en Windows.
+
+

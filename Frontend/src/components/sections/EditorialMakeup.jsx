@@ -5,7 +5,7 @@ export default function EditorialMakeup() {
   const navigate = useNavigate()
 
   const handleClick = (cat) => {
-    navigate(`/descubrir?tag=${encodeURIComponent(cat.name)}`)
+    navigate(`/descubrir?maquillaje=${encodeURIComponent(cat.name)}`)
   }
 
   return (

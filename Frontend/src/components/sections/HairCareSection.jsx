@@ -10,7 +10,7 @@ export default function HairCareSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-5">
-            <div className="glass-card rounded-3xl p-6 border-glowe-blue-dark/40 shadow-xl bg-white/80 space-y-4">
+            <div className="rounded-3xl p-6 border-glowe-blue-dark/40 shadow-xl bg-white/80 space-y-4">
               <Badge tone="blue" className="uppercase tracking-wider text-xs">
                 Cuidado Capilar
               </Badge>
@@ -30,8 +30,8 @@ export default function HairCareSection() {
             {hairCards.map((card) => (
               <button
                 key={card.name}
-                onClick={() => navigate(`/descubrir?tag=${encodeURIComponent(card.name)}`)}
-                className="glass-panel p-4 rounded-2xl text-center border-glowe-blue hover:bg-white transition-colors cursor-pointer"
+                onClick={() => navigate(`/descubrir?cabello=${encodeURIComponent(card.name)}`)}
+                className="glass-card p-4 rounded-2xl text-center border-glowe-blue hover:bg-white hover:border-glowe-blue-dark hover:shadow-glowe-blue transition-all cursor-pointer"
               >
                 <div className="w-12 h-12 mx-auto rounded-full bg-glowe-blue flex items-center justify-center text-xl mb-2">
                   {card.icon}

@@ -8,9 +8,9 @@ export default {
           pink: '#FDE2E4',
           'pink-dark': '#F4ACB7',
           'pink-accent': '#FF758F',
-          blue: '#E2ECE9',
-          'blue-dark': '#99C1B9',
-          'blue-accent': '#52B788',
+          blue: '#e2eaec',
+          'blue-dark': '#7fd8d0',
+          'blue-accent': '#59b1aa', //72C3FF
           yellow: '#FFF1C5',
           'yellow-dark': '#FFE494',
           'yellow-accent': '#F59E0B',

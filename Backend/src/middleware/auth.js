@@ -13,10 +13,15 @@ const getJwtSecret = () => {
 
 export const protect = async (req, res, next) => {
   try {
-    const authHeader = req.headers.authorization || '';
-    const token = authHeader.startsWith('Bearer ')
-      ? authHeader.slice('Bearer '.length).trim()
-      : '';
+    const rawHeader = req.headers.authorization || req.headers.Authorization || '';
+    const authHeader = String(rawHeader).trim();
+    let token = '';
+
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (authHeader) {
+      token = authHeader;
+    }
 
     if (!token) {
       return res.status(401).json({
@@ -57,7 +62,8 @@ export const protect = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
-  if (!req.user || req.user.role !== 'admin') {
+  const userRole = String(req.user?.role || '').toLowerCase();
+  if (!req.user || userRole !== 'admin') {
     return res.status(403).json({
       success: false,
       data: null,

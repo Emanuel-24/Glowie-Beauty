@@ -85,6 +85,7 @@ function AppLayout() {
             }
           />
           <Route path="/login" element={<Auth />} />
+          <Route path="/auth" element={<Auth />} />
           <Route path="/registro" element={<Auth />} />
           <Route path="/favoritos" element={<Favoritos />} />
           <Route

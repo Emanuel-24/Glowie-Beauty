@@ -10,11 +10,12 @@ const radii = {
   '3xl': 'rounded-3xl',
 }
 
-export default function Card({ variant = 'glass', radius = '3xl', className = '', children, style = {} }) {
+export default function Card({ variant = 'glass', radius = '3xl', className = '', children, style = {}, ...props }) {
   return (
     <div
       className={`${variants[variant] || variants.glass} ${radii[radius] || radii['3xl']} ${className}`}
       style={style}
+      {...props}
     >
       {children}
     </div>

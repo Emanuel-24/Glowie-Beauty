@@ -11,7 +11,7 @@ import {
   login as loginUser,
   register as registerUser,
 } from '../services/authService'
-import { clearAuthToken } from '../services/api'
+import { clearAuthToken, setAuthToken } from '../services/api'
 import { useCart } from './CartContext'
 
 const AuthContext = createContext(null)
@@ -24,7 +24,13 @@ const loadUser = () => {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : null
-    return parsed && typeof parsed === 'object' && typeof parsed.email === 'string' ? parsed : null
+    if (parsed && typeof parsed === 'object' && typeof parsed.email === 'string') {
+      if (parsed.token) {
+        setAuthToken(parsed.token)
+      }
+      return parsed
+    }
+    return null
   } catch {
     return null
   }
@@ -71,11 +77,33 @@ export function AuthProvider({ children }) {
     persistOrders(orders)
   }, [orders])
 
+  useEffect(() => {
+    const handleUnauthorizedEvent = (event) => {
+      const message = event.detail?.message || 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+      setUser(null)
+      clearAuthToken()
+      try {
+        window.localStorage.removeItem(STORAGE_KEY)
+        window.sessionStorage.setItem('glowe:auth:notice', message)
+      } catch {}
+
+      const currentPath = window.location.pathname
+      if (currentPath !== '/login' && currentPath !== '/auth' && currentPath !== '/registro') {
+        window.location.href = '/auth'
+      }
+    }
+
+    window.addEventListener('glowe:auth:unauthorized', handleUnauthorizedEvent)
+    return () => {
+      window.removeEventListener('glowe:auth:unauthorized', handleUnauthorizedEvent)
+    }
+  }, [])
+
   const refreshProfile = useCallback(async () => {
     try {
       const result = await fetchProfile()
       if (result?.ok && result.user) {
-        setUser(result.user)
+        setUser((prev) => ({ ...result.user, token: prev?.token || '' }))
       }
       return result
     } catch {
@@ -87,7 +115,12 @@ export function AuthProvider({ children }) {
     try {
       const result = await loginUser(email, password)
       if (result?.ok && result.user) {
-        setUser(result.user)
+        const token = result.token || result.user.token || ''
+        const userWithToken = { ...result.user, token }
+        if (token) {
+          setAuthToken(token)
+        }
+        setUser(userWithToken)
       }
       return result
     } catch (error) {
@@ -99,7 +132,12 @@ export function AuthProvider({ children }) {
     try {
       const result = await registerUser({ name, email, password })
       if (result?.ok && result.user) {
-        setUser(result.user)
+        const token = result.token || result.user.token || ''
+        const userWithToken = { ...result.user, token }
+        if (token) {
+          setAuthToken(token)
+        }
+        setUser(userWithToken)
       }
       return result
     } catch (error) {

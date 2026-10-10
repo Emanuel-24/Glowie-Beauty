@@ -79,6 +79,17 @@ export default function Auth() {
     setShowPassword(false)
   }, [mode])
 
+  useEffect(() => {
+    try {
+      const notice = window.sessionStorage.getItem('glowe:auth:notice')
+      if (notice) {
+        window.sessionStorage.removeItem('glowe:auth:notice')
+        setError(notice)
+        showToast('Sesión requerida', notice, '⚠️')
+      }
+    } catch {}
+  }, [showToast])
+
   const setField = (event) => {
     const { name, value } = event.target
     setForm((prev) => ({ ...prev, [name]: value }))

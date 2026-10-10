@@ -14,29 +14,81 @@ export default function Descubrir() {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [products, setProducts] = useState([])
-  const tagParam = searchParams.get('tag') || ''
+
+  // Separación de filtros: Origen ("Maquillaje" o "Cabello") vs Secundario ("Descubrir")
+  const explicitMaquillaje = searchParams.get('maquillaje') || searchParams.get('curaduria')
+  const explicitCabello = searchParams.get('cabello')
+  const explicitDescubrir = searchParams.get('descubrir')
+  const legacyTag = searchParams.get('tag')
+
+  let maquillajeParam = explicitMaquillaje || ''
+  let cabelloParam = explicitCabello || ''
+  let descubrirParam = explicitDescubrir || ''
+
+  // Compatibilidad hacia atrás con enlaces legacy ?tag=...
+  if (!explicitMaquillaje && !explicitCabello && !explicitDescubrir && legacyTag) {
+    const isQuizOption = quizOptions.some((o) => o.tag.toLowerCase() === legacyTag.toLowerCase())
+    if (isQuizOption) {
+      descubrirParam = legacyTag
+    } else {
+      maquillajeParam = legacyTag
+    }
+  }
+
   const searchParam = searchParams.get('search') || ''
 
-  // Buscar coincidencia en quizOptions si coincide el tag
-  const glowFilter = tagParam
-    ? quizOptions.find((o) => o.tag.toLowerCase() === tagParam.toLowerCase()) ?? null
+  // Filtro de experiencia de Descubrir (objeto quiz o fallback estructurado)
+  const glowFilter = descubrirParam
+    ? quizOptions.find((o) => o.tag.toLowerCase() === descubrirParam.toLowerCase()) ?? {
+        tag: descubrirParam,
+        label: descubrirParam.charAt(0).toUpperCase() + descubrirParam.slice(1),
+        icon: '✨',
+        title: `Filtro: ${descubrirParam}`,
+        desc: `Productos seleccionados para ${descubrirParam}`,
+      }
     : null
 
   useEffect(() => {
     getProducts().then(setProducts).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [tagParam, searchParam])
-
   const handleSelectFilter = (option) => {
     const nextParams = new URLSearchParams(searchParams)
-    if (option) {
-      nextParams.set('tag', option.tag)
-    } else {
-      nextParams.delete('tag')
+    nextParams.delete('tag') // Migración limpia de legacy tag
+    nextParams.delete('curaduria') // Migración limpia de legacy param
+    if (maquillajeParam && !nextParams.has('maquillaje')) {
+      nextParams.set('maquillaje', maquillajeParam)
     }
+    if (cabelloParam && !nextParams.has('cabello')) {
+      nextParams.set('cabello', cabelloParam)
+    }
+
+    if (option) {
+      const optionTag = typeof option === 'string' ? option : option.tag
+      nextParams.set('descubrir', optionTag)
+    } else {
+      nextParams.delete('descubrir')
+    }
+    setSearchParams(nextParams)
+  }
+
+  const handleClearMaquillaje = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('maquillaje')
+    nextParams.delete('curaduria')
+    nextParams.delete('tag')
+    setSearchParams(nextParams)
+  }
+
+  const handleClearCabello = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('cabello')
+    setSearchParams(nextParams)
+  }
+
+  const handleClearDescubrir = () => {
+    const nextParams = new URLSearchParams(searchParams)
+    nextParams.delete('descubrir')
     setSearchParams(nextParams)
   }
 
@@ -47,12 +99,6 @@ export default function Descubrir() {
     } else {
       nextParams.delete('search')
     }
-    setSearchParams(nextParams)
-  }
-
-  const handleClearTag = () => {
-    const nextParams = new URLSearchParams(searchParams)
-    nextParams.delete('tag')
     setSearchParams(nextParams)
   }
 
@@ -73,11 +119,15 @@ export default function Descubrir() {
       <ProductGrid
         products={products}
         glowFilter={glowFilter}
-        activeTag={tagParam}
+        maquillajeTag={maquillajeParam}
+        cabelloTag={cabelloParam}
+        descubrirTag={descubrirParam}
         searchQuery={searchParam}
         enableSearch={true}
         onSearchChange={handleSearchChange}
-        onClearTag={handleClearTag}
+        onClearMaquillaje={handleClearMaquillaje}
+        onClearCabello={handleClearCabello}
+        onClearDescubrir={handleClearDescubrir}
         onClearSearch={handleClearSearch}
         onResetFilter={handleResetAll}
       />
