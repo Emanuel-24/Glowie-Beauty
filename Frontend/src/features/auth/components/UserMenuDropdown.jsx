@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/features/auth'
 import { useToast } from '@/shared/toast'
-import { ROUTES } from '@/app/routes'
+import { ROUTES } from '@/shared/config/routes'
 import Badge from '@/shared/components/ui/Badge'
 
 export default function UserMenuDropdown({

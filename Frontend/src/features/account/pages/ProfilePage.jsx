@@ -14,9 +14,9 @@ import { useAuth } from '@/features/auth'
 import { getOrders } from '@/features/orders'
 import { useToast } from '@/shared/toast'
 import { usePageMeta } from '@/shared/hooks/usePageMeta'
-import { ROUTES } from '@/app/routes'
-import OrderCard from '../components/OrderCard'
-import ProfileForm from '../components/ProfileForm'
+import { ROUTES } from '@/shared/config/routes'
+import OrderCard from '@/features/account/components/OrderCard'
+import ProfileForm from '@/features/account/components/ProfileForm'
 
 const FILTERS = ['Todos', 'Pendientes', 'En preparación', 'En camino', 'Entregados']
 
