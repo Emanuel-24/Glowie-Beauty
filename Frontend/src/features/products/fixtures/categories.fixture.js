@@ -87,7 +87,7 @@ export const quizOptions = [
   {
     tag: 'renovar',
     icon: '💄',
-    label: 'Renovar Maquillaje',
+    label: 'Maquillaje',
     sub: 'Tendencias & Tonos',
     title: 'Filtro: Renovar Maquillaje',
     desc: 'Últimas tendencias y tonos estrella.',

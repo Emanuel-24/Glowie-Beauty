@@ -5,26 +5,20 @@ import { getUsers } from '@/features/admin/services/userService'
 import { getOrders } from '@/features/orders/services/orderService'
 import { getPayments } from '@/features/admin/services/paymentService'
 import { getTags } from '@/features/products/services/tagService'
+import { getBundles } from '@/features/promotions/services/bundleService'
 import { getSiteConfig, defaultSiteConfig } from '@/features/home/services/siteConfigService'
 import { exportToPdf } from '@/features/admin/services/reportService'
-import {
-  formatCOP,
-  toDayKey,
-  parseLocalDate,
-  defaultProducts,
-  defaultCategories,
-  defaultUsers,
-  defaultPurchases,
-} from '@/features/admin/constants'
+import { formatCOP, toDayKey } from '@/features/admin/constants'
 
 export function useAdminData() {
-  const [products, setProducts] = useState(defaultProducts)
+  const [products, setProducts] = useState([])
   const [moduleReady, setModuleReady] = useState(false)
-  const [categories, setCategories] = useState(defaultCategories)
-  const [users, setUsers] = useState(defaultUsers)
-  const [purchases, setPurchases] = useState(defaultPurchases)
+  const [categories, setCategories] = useState([])
+  const [users, setUsers] = useState([])
+  const [purchases, setPurchases] = useState([])
   const [payments, setPayments] = useState([])
   const [tags, setTags] = useState([])
+  const [bundles, setBundles] = useState([])
   const [siteConfigData, setSiteConfigData] = useState(defaultSiteConfig)
   const [searches, setSearches] = useState({
     dashboard: '',
@@ -35,6 +29,7 @@ export function useAdminData() {
     users: '',
     offers: '',
     tags: '',
+    bundles: '',
   })
 
   useEffect(() => {
@@ -49,19 +44,28 @@ export function useAdminData() {
       getPayments(),
       getTags(),
       getSiteConfig(),
+      getBundles(),
     ])
-      .then(([items, categoryItems, orderItems, userItems, paymentItems, tagItems, configItem]) => {
+      .then(([items, categoryItems, orderItems, userItems, paymentItems, tagItems, configItem, bundleItems]) => {
         if (!active) return
 
         if (tagItems.status === 'fulfilled' && Array.isArray(tagItems.value)) {
           setTags(tagItems.value)
+        } else {
+          setTags([])
         }
 
         if (configItem.status === 'fulfilled' && configItem.value) {
           setSiteConfigData(configItem.value)
         }
 
-        if (items.status === 'fulfilled' && Array.isArray(items.value) && items.value.length > 0) {
+        if (bundleItems.status === 'fulfilled' && Array.isArray(bundleItems.value)) {
+          setBundles(bundleItems.value)
+        } else {
+          setBundles([])
+        }
+
+        if (items.status === 'fulfilled' && Array.isArray(items.value)) {
           setProducts(
             items.value.map((item, index) => ({
               id: item.id ?? item._id ?? index + 1,
@@ -71,7 +75,7 @@ export function useAdminData() {
               price: Number(item.price ?? 0),
               oldPrice: item.oldPrice != null ? Number(item.oldPrice) : null,
               stock: Number(item.stock ?? 0),
-              image: item.image || item.images?.[0] || defaultProducts[0].image,
+              image: item.image || item.images?.[0] || '',
               badge: item.badge || 'Nuevo',
               desc: item.desc || item.description || 'Producto de la colección Glowe.',
               tags: Array.isArray(item.tags) ? item.tags : [],
@@ -84,13 +88,11 @@ export function useAdminData() {
               isFeaturedOffer: Boolean(item.isFeaturedOffer),
             })),
           )
+        } else {
+          setProducts([])
         }
 
-        if (
-          categoryItems.status === 'fulfilled' &&
-          Array.isArray(categoryItems.value) &&
-          categoryItems.value.length > 0
-        ) {
+        if (categoryItems.status === 'fulfilled' && Array.isArray(categoryItems.value)) {
           setCategories(
             categoryItems.value.map((item) => ({
               id: item.id ?? item._id ?? Date.now().toString(),
@@ -101,28 +103,33 @@ export function useAdminData() {
               statusTone: item.status === 'Pausada' ? 'warning' : 'success',
             })),
           )
+        } else {
+          setCategories([])
         }
 
-        if (orderItems.status === 'fulfilled' && Array.isArray(orderItems.value) && orderItems.value.length > 0) {
+        if (orderItems.status === 'fulfilled' && Array.isArray(orderItems.value)) {
           setPurchases(
             orderItems.value.map((item, index) => {
-              const fallbackDate = defaultPurchases[index % defaultPurchases.length].date
-              const createdAt = item.createdAt ? new Date(item.createdAt) : parseLocalDate(fallbackDate)
+              const createdAt = item.createdAt ? new Date(item.createdAt) : new Date()
               return {
                 id: item.id ?? item._id ?? index + 1,
                 invoice: item.invoice || `FAC-${String(index + 1).padStart(4, '0')}`,
-                date: item.createdAt ? createdAt.toLocaleDateString('es-CO') : fallbackDate,
+                date: item.createdAt ? createdAt.toLocaleDateString('es-CO') : 'Hoy',
                 createdAt,
                 customer: item.customer || 'Cliente Glowe',
                 total: Number(item.total ?? 0),
                 status: item.status || 'Pendiente',
                 statusTone: item.status === 'Completada' ? 'success' : item.status === 'Anulada' ? 'danger' : 'warning',
+                items: Array.isArray(item.items) ? item.items : [],
+                shippingAddress: item.shippingAddress || 'No especificada',
               }
             }),
           )
+        } else {
+          setPurchases([])
         }
 
-        if (userItems.status === 'fulfilled' && Array.isArray(userItems.value) && userItems.value.length > 0) {
+        if (userItems.status === 'fulfilled' && Array.isArray(userItems.value)) {
           setUsers(
             userItems.value.map((item, index) => ({
               id: item.id ?? item._id ?? index + 1,
@@ -133,9 +140,11 @@ export function useAdminData() {
               statusTone: item.status === 'Bloqueado' ? 'danger' : 'success',
             })),
           )
+        } else {
+          setUsers([])
         }
 
-        if (paymentItems.status === 'fulfilled' && Array.isArray(paymentItems.value) && paymentItems.value.length > 0) {
+        if (paymentItems.status === 'fulfilled' && Array.isArray(paymentItems.value)) {
           setPayments(
             paymentItems.value.map((item) => ({
               id: item.id ?? item._id,
@@ -154,7 +163,7 @@ export function useAdminData() {
       })
       .finally(() => {
         if (active) {
-          window.setTimeout(() => setModuleReady(true), 350)
+          window.setTimeout(() => setModuleReady(true), 250)
         }
       })
 
@@ -238,6 +247,8 @@ export function useAdminData() {
     setPayments,
     tags,
     setTags,
+    bundles,
+    setBundles,
     siteConfigData,
     setSiteConfigData,
     moduleReady,

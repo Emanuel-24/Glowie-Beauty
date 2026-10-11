@@ -4,21 +4,18 @@ import ActionButton from '@/features/admin/components/ActionButton'
 import StatusBadge from '@/features/admin/components/StatusBadge'
 import AdminModal from '@/features/admin/components/AdminModal'
 import Button from '@/shared/components/ui/Button'
-import { createOrder, updateOrder, deleteOrder } from '@/features/orders/services/orderService'
+import { updateOrder } from '@/features/orders/services/orderService'
 import { exportToExcel, exportToPdf } from '@/features/admin/services/reportService'
 import { formatCOP, formatId } from '@/features/admin/constants'
 import { useToast } from '@/shared/toast'
-import { useAuth } from '@/features/auth'
 
 export default function OrdersTab({
   purchases = [],
   setPurchases,
-  products = [],
   searchValue = '',
   onSearchChange,
 }) {
   const { showToast } = useToast()
-  const { user } = useAuth()
   const [localSearch, setLocalSearch] = useState('')
   const [selectedOrder, setSelectedOrder] = useState(null)
 
@@ -44,77 +41,66 @@ export default function OrdersTab({
     [purchases],
   )
 
-  const handleCreateOrder = async () => {
-    const generatedOrder = {
-      userId: user?._id || user?.id || 'authenticated-user',
-      invoice: `FAC-${Date.now()}`,
-      customer: user?.name || 'Cliente nuevo',
-      total: 85000,
-      status: 'Pendiente',
-      shippingAddress: 'Bogotá, Colombia',
-      items: [
-        {
-          productId: products[0]?._id || products[0]?.id || 'demo-product',
-          title: products[0]?.name || 'Glow Serum',
-          quantity: 1,
-          price: 85000,
-        },
-      ],
+  const togglePurchaseStatus = async (id) => {
+    if (!id) return
+    const target = purchases.find((item) => (item.id ?? item._id) === id)
+    if (!target) return
+
+    const nextStatus =
+      target.status === 'Pendiente' ? 'Completada' : target.status === 'Completada' ? 'Anulada' : 'Pendiente'
+
+    try {
+      const result = await updateOrder(id, { status: nextStatus })
+      if (result?.ok !== false) {
+        setPurchases?.((prev) =>
+          prev.map((item) => {
+            if ((item.id ?? item._id) !== id) return item
+            return {
+              ...item,
+              status: nextStatus,
+              statusTone: nextStatus === 'Completada' ? 'success' : nextStatus === 'Anulada' ? 'danger' : 'warning',
+            }
+          }),
+        )
+        showToast('Pedido actualizado', `El pedido quedó en ${nextStatus}.`, '✅')
+      }
+    } catch (err) {
+      showToast('Error', err.message || 'No se pudo actualizar el pedido.', '❌')
+    }
+  }
+
+  const handleAnularOrder = async (id) => {
+    if (!id) return
+    const target = purchases.find((item) => (item.id ?? item._id) === id)
+    if (!target) return
+
+    if (target.status === 'Anulada') {
+      showToast('Pedido ya anulado', 'Esta orden ya se encuentra en estado Anulada.', 'ℹ️')
+      return
+    }
+
+    if (typeof window !== 'undefined' && window.confirm) {
+      if (!window.confirm('¿Anular este pedido? Pasará a estado Anulada manteniendo su registro contable.')) return
     }
 
     try {
-      const result = await createOrder(generatedOrder)
-      const savedOrder = result?.data ?? generatedOrder
-      setPurchases?.((prev) => [
-        {
-          id: savedOrder.id ?? Date.now(),
-          invoice: savedOrder.invoice || generatedOrder.invoice,
-          date: new Date().toLocaleDateString('es-CO'),
-          createdAt: new Date(),
-          customer: savedOrder.customer || generatedOrder.customer,
-          total: Number(savedOrder.total ?? generatedOrder.total),
-          status: savedOrder.status || 'Pendiente',
-          statusTone: savedOrder.status === 'Completada' ? 'success' : savedOrder.status === 'Anulada' ? 'danger' : 'warning',
-        },
-        ...prev,
-      ])
-      showToast('Compra creada', `Se registró la orden ${savedOrder.invoice || generatedOrder.invoice}.`, '🛍️')
+      const result = await updateOrder(id, { status: 'Anulada' })
+      if (result?.ok !== false) {
+        setPurchases?.((prev) =>
+          prev.map((item) => {
+            if ((item.id ?? item._id) !== id) return item
+            return {
+              ...item,
+              status: 'Anulada',
+              statusTone: 'danger',
+            }
+          }),
+        )
+        showToast('Pedido anulado', 'La compra pasó a estado Anulada.', '⚠️')
+      }
     } catch (err) {
-      showToast('Error', err.message || 'No se pudo crear la orden.', '❌')
+      showToast('Error', err.message || 'No se pudo anular la orden.', '❌')
     }
-  }
-
-  const togglePurchaseStatus = async (id) => {
-    const target = purchases.find((item) => item.id === id)
-    if (!target) return
-
-    const nextStatus = target.status === 'Pendiente' ? 'Completada' : target.status === 'Completada' ? 'Anulada' : 'Pendiente'
-    const result = await updateOrder(id, { status: nextStatus })
-
-    if (result?.ok !== false) {
-      setPurchases?.((prev) =>
-        prev.map((item) => {
-          if (item.id !== id) return item
-          return {
-            ...item,
-            status: nextStatus,
-            statusTone: nextStatus === 'Completada' ? 'success' : nextStatus === 'Anulada' ? 'danger' : 'warning',
-          }
-        }),
-      )
-      showToast('Pedido actualizado', `El pedido quedó en ${nextStatus}.`, '✅')
-    }
-  }
-
-  const handleDeletePurchase = async (id) => {
-    if (typeof window !== 'undefined' && window.confirm) {
-      if (!window.confirm('¿Anular esta compra y quitarla del panel?')) return
-    }
-
-    const result = await deleteOrder(id)
-    if (result?.ok === false) return
-    setPurchases?.((prev) => prev.filter((item) => (item.id ?? item._id) !== id))
-    showToast('Compra anulada', 'La compra fue eliminada del registro.', '🗑️')
   }
 
   const orderColumns = [
@@ -160,7 +146,13 @@ export default function OrdersTab({
           <ActionButton type="edit" title="Cambiar estado" onClick={() => togglePurchaseStatus(row.rawId || row.id)}>
             Cambiar estado
           </ActionButton>
-          <ActionButton type="delete" title="Anular" onClick={() => handleDeletePurchase(row.rawId || row.id)}>
+          <ActionButton
+            type="delete"
+            title="Anular pedido"
+            onClick={() => handleAnularOrder(row.rawId || row.id)}
+            disabled={row.status === 'Anulada'}
+            className={row.status === 'Anulada' ? 'opacity-40 cursor-not-allowed' : ''}
+          >
             Anular
           </ActionButton>
         </div>
@@ -187,13 +179,11 @@ export default function OrdersTab({
   return (
     <>
       <DataTable
-        title="Compras"
+        title="Compras y Pedidos"
         rows={orderRows}
         columns={orderColumns}
         searchValue={currentSearch}
         onSearchChange={handleSearch}
-        primaryActionLabel="+ Crear compra"
-        onPrimaryAction={handleCreateOrder}
         onExportPdf={() => handleExport('pdf')}
         onExportExcel={() => handleExport('excel')}
       />

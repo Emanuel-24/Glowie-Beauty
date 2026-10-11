@@ -19,6 +19,8 @@ export default function AdminSidebar({
         return adminData.tags.length
       case 'products':
         return adminData.products.length
+      case 'bundles':
+        return adminData.bundles?.length ?? 0
       case 'offers':
         return adminData.products.filter((p) => p.isOffer).length
       case 'orders':

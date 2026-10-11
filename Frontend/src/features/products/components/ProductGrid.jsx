@@ -129,7 +129,7 @@ export default function ProductGrid({
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
             {enableSearch && (
-              <div className="relative min-w-[220px] max-w-full">
+              <div className="relative min-w-[270px] max-w-full">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-glowe-muted pointer-events-none z-10" />
                 <input
                   type="text"
@@ -153,7 +153,7 @@ export default function ProductGrid({
             )}
 
             {!categoryLock && (
-              <div className="hide-scrollbar -mx-1 flex max-w-full items-center gap-1.5 overflow-x-auto rounded-full border border-white bg-white/60 p-1 shadow-sm sm:mx-0">
+              <div className="hide-scrollbar -mx-1 flex w-fit ml-auto items-center gap-1.5 overflow-x-auto rounded-full border border-white bg-white/60 p-1 shadow-sm sm:mx-0">
                 {categoryPills.map((pill) => (
                   <button
                     key={pill.value}

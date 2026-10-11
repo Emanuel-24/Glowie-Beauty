@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Order from '../models/Order.js';
 
 export const normalizeOrder = (order) => ({
@@ -22,6 +23,12 @@ export const getAllOrders = async () => {
 };
 
 export const getOrderByIdRecord = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de pedido no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const order = await Order.findById(id).populate('userId', 'name email').lean();
   if (!order) {
     const error = new Error('Pedido no encontrado');
@@ -62,6 +69,12 @@ export const createOrderRecord = async ({ items, total, shippingAddress, custome
 };
 
 export const updateOrderRecord = async (id, { status, total, customer, invoice, shippingAddress }) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de pedido no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const order = await Order.findById(id);
 
   if (!order) {
@@ -81,6 +94,12 @@ export const updateOrderRecord = async (id, { status, total, customer, invoice, 
 };
 
 export const deleteOrderRecord = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de pedido no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const order = await Order.findByIdAndDelete(id);
 
   if (!order) {

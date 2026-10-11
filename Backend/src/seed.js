@@ -5,6 +5,7 @@ dotenv.config()
 import connectDB from './config/db.js'
 import Product from './models/Product.js'
 import User from './models/User.js'
+import Bundle from './models/Bundle.js'
 
 const seedProducts = [
   {
@@ -178,6 +179,7 @@ const main = async () => {
 
   await Product.deleteMany({})
   await User.deleteMany({})
+  await Bundle.deleteMany({})
 
   const products = await Product.insertMany(seedProducts)
   await User.create({
@@ -187,7 +189,49 @@ const main = async () => {
     role: 'admin',
   })
 
-  console.log(`Seed completado: ${products.length} productos y 1 admin creados.`)
+  // Sembrar combos enlazados con productos reales
+  const p1 = products[0]?._id
+  const p2 = products[1]?._id
+  const p3 = products[2]?._id
+
+  if (p1 && p2) {
+    await Bundle.create([
+      {
+        name: 'Glow Starter Box',
+        desc: 'Brillo labial HydraGlow + Sérum Capilar Argan.',
+        price: 79000,
+        oldPrice: 90000,
+        badge: 'TOP BUNDLE',
+        badgeBg: 'bg-glowe-pink',
+        badgeText: 'text-glowe-pink-accent',
+        border: 'border-glowe-pink/60',
+        btn: 'bg-glowe-pink-accent hover:bg-rose-500',
+        image: 'https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=800&q=80',
+        productIds: [p1, p2],
+        isActive: true,
+      },
+      ...(p3
+        ? [
+            {
+              name: 'Everyday Beauty Duo',
+              desc: 'Brillo HydraGlow + Paleta Rubor SunKissed.',
+              price: 68000,
+              oldPrice: 82000,
+              badge: 'EVERYDAY',
+              badgeBg: 'bg-glowe-pink',
+              badgeText: 'text-glowe-pink-accent',
+              border: 'border-glowe-pink/60',
+              btn: 'bg-glowe-pink-accent hover:bg-rose-500',
+              image: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=800&q=80',
+              productIds: [p1, p3],
+              isActive: true,
+            },
+          ]
+        : []),
+    ])
+  }
+
+  console.log(`Seed completado: ${products.length} productos, combos y 1 admin creados.`)
   process.exit(0)
 }
 

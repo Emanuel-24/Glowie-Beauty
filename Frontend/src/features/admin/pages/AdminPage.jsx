@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ArrowLeft } from 'lucide-react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Orbit } from '@uiball/loaders'
@@ -17,6 +18,7 @@ import PaymentsTab from '@/features/admin/tabs/payments/PaymentsTab'
 import ProductsTab from '@/features/admin/tabs/products/ProductsTab'
 import OrdersTab from '@/features/admin/tabs/orders/OrdersTab'
 import OffersTab from '@/features/admin/tabs/offers/OffersTab'
+import BundlesTab from '@/features/admin/tabs/bundles/BundlesTab'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -25,6 +27,7 @@ const moduleTitles = {
   categories: 'Categoría de productos',
   tags: 'Etiquetas / Tags',
   products: 'Productos',
+  bundles: 'Combos y Kits',
   siteConfig: 'Configuración Web',
   orders: 'Compras',
   payments: 'Pagos y abonos',
@@ -105,8 +108,10 @@ export default function AdminPage() {
         return <PaymentsTab payments={adminData.payments} setPayments={adminData.setPayments} purchases={adminData.purchases} searchValue={adminData.searches.payments} onSearchChange={(v) => adminData.handleSearchChange('payments', v)} />
       case 'products':
         return <ProductsTab products={adminData.products} setProducts={adminData.setProducts} tags={adminData.tags} searchValue={adminData.searches.products} onSearchChange={(v) => adminData.handleSearchChange('products', v)} onConfigureOffer={() => setActiveModule('offers')} />
+      case 'bundles':
+        return <BundlesTab bundles={adminData.bundles} setBundles={adminData.setBundles} products={adminData.products} searchValue={adminData.searches.bundles} onSearchChange={(v) => adminData.handleSearchChange('bundles', v)} />
       case 'orders':
-        return <OrdersTab purchases={adminData.purchases} setPurchases={adminData.setPurchases} products={adminData.products} searchValue={adminData.searches.orders} onSearchChange={(v) => adminData.handleSearchChange('orders', v)} />
+        return <OrdersTab purchases={adminData.purchases} setPurchases={adminData.setPurchases} searchValue={adminData.searches.orders} onSearchChange={(v) => adminData.handleSearchChange('orders', v)} />
       case 'offers':
         return <OffersTab products={adminData.products} setProducts={adminData.setProducts} searchValue={adminData.searches.offers} onSearchChange={(v) => adminData.handleSearchChange('offers', v)} />
       default:
@@ -116,6 +121,19 @@ export default function AdminPage() {
 
   return (
     <div ref={panelRef} className="relative z-10 px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8">
+      {/* Botón Volver a la tienda por fuera del contenedor principal */}
+      <div className="mx-auto max-w-7xl mb-3">
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          title="Volver a la tienda"
+          aria-label="Volver a la tienda"
+          className="inline-flex items-center rounded-full border border-glowe-muted/20 bg-white/70 px-3 py-3 text-xs font-semibold text-glowe-dark shadow-xs backdrop-blur-md transition-all duration-200 hover:bg-white hover:text-glowe-blue-accent hover:border-glowe-blue/60 active:scale-95 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-blue-accent"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+
       <div className="admin-module-card mx-auto max-w-7xl overflow-hidden rounded-[2rem] border border-white/65 bg-white/60 shadow-[0_25px_80px_rgba(95,72,111,0.08)] backdrop-blur-xl">
         <div className="flex min-h-[860px] flex-col xl:flex-row">
           <AdminSidebar

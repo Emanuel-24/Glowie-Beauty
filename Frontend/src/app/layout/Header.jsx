@@ -1,9 +1,11 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Heart, Search, ShoppingBag } from 'lucide-react'
+import { useAuth, UserMenuDropdown } from '@/features/auth'
 import { useCart } from '@/features/cart'
 import { useFavorites } from '@/features/favorites'
 import { useScrollY } from '@/shared/hooks/useScrollY'
+import { ROUTES } from '@/app/routes'
 import Button from '@/shared/components/ui/Button'
 import SearchModal from '@/features/products/components/SearchModal'
 import PillGroup from '@/shared/components/ui/PillGroup'
@@ -30,6 +32,7 @@ export default function Header({ products = [] }) {
   const [searchOpen, setSearchOpen] = useState(false)
   const navigate = useNavigate()
   const { pathname } = useLocation()
+  const { isAuthenticated } = useAuth()
   const { itemCount, toggleCart } = useCart()
   const { count: favoritesCount } = useFavorites()
 
@@ -50,8 +53,13 @@ export default function Header({ products = [] }) {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between gap-2 sm:h-20">
             {/* Official Logo */}
-            <button type="button" onClick={() => navigate('/')} className="flex shrink-0 items-center gap-2 sm:gap-3 group">
-              <div className="relative h-11 w-11 rounded-full  from-glowe-pink-dark via-glowe-yellow-dark to-glowe-blue-dark p-0.5 shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="flex shrink-0 items-center gap-2 sm:gap-3 group text-left cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent focus-visible:ring-offset-2 rounded-xl"
+              aria-label="Ir a página de inicio de Glowe Beauty"
+            >
+              <div className="relative h-11 w-11 rounded-full p-0.5 shadow-sm transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14">
                 <img
                   src="/Logo-sencillo.webp"
                   alt="GLOWE BEAUTY Logo"
@@ -73,30 +81,39 @@ export default function Header({ products = [] }) {
               </div>
             </button>
 
-            {/* Navigation */}
-            <nav aria-label="Navegación principal" className="hidden xl:block">
+            {/* Navigation Pills (Escritorio grande xl:) */}
+            <nav
+              aria-label="Navegación principal"
+              className={`hidden xl:block ${
+                isAuthenticated ? 'absolute left-1/2 -translate-x-1/2' : 'relative'
+              }`}
+            >
               <PillGroup
                 options={navPills}
                 activeValue={pathname}
                 onChange={(to) => navigate(to)}
                 ariaLabel="Secciones principales"
                 containerClassName="bg-white/50 p-1.5 rounded-full border border-white/80 shadow-inner"
-              />
+              />  
             </nav>
 
-            {/* Quick Actions */}
-            <div className="ml-auto flex min-w-0 items-center gap-1 sm:gap-2 xl:gap-3">
-              <Button
-                variant="plain"
-                size="icon"
-                onClick={() => setSearchOpen(true)}
-                className="shrink-0 text-glowe-dark hover:bg-white/80"
-                title="Buscar productos"
-                aria-label="Buscar productos"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
+            {/* Quick Actions & Auth */}
+            <div className="ml-auto flex min-w-0 items-center gap-1.5 sm:gap-2 lg:gap-3">
+              {/* Buscador: Oculto en móvil (< md), visible en tablet y PC (md:flex) */}
+              <div className="hidden md:flex items-center">
+                <Button
+                  variant="plain"
+                  size="icon"
+                  onClick={() => setSearchOpen(true)}
+                  className="shrink-0 text-glowe-dark hover:bg-white/80"
+                  title="Buscar productos"
+                  aria-label="Buscar productos"
+                >
+                  <Search className="w-5 h-5" />
+                </Button>
+              </div>
 
+              {/* Favoritos */}
               <Button
                 variant="plain"
                 size="icon"
@@ -113,6 +130,7 @@ export default function Header({ products = [] }) {
                 )}
               </Button>
 
+              {/* Carrito */}
               <Button
                 variant="plain"
                 size="icon"
@@ -128,6 +146,51 @@ export default function Header({ products = [] }) {
                   </span>
                 )}
               </Button>
+
+              {/* Separador sutil */}
+              <span className="hidden sm:inline-block h-6 w-px bg-glowe-pink/30 mx-0.5" aria-hidden="true" />
+
+              {/* Zona de Autenticación / Perfil */}
+              <div className="bg-white/50 p-1 rounded-full border border-white/80 shadow-inner flex items-center">
+                {isAuthenticated ? (
+                  <UserMenuDropdown />
+                ) : (
+                  /* Usuario Invitado (No Autenticado) */
+                  <div className="flex items-center gap-1 sm:gap-1.5">
+                    {/* Móvil (< md): Botón compacto 'Ingresar' */}
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => navigate(`${ROUTES.AUTH}?mode=login`)}
+                      className="md:hidden text-xs px-2.5 py-1.5 min-h-8 font-semibold text-glowe-dark border-transparent hover:bg-white/80"
+                      title="Iniciar sesión"
+                      aria-label="Iniciar sesión"
+                    >
+                      Ingresar
+                    </Button>
+
+                    {/* Tablet y PC (>= md): Botón secundario 'Iniciar sesión' */}
+                    <Button
+                      variant="glass"
+                      size="sm"
+                      onClick={() => navigate(`${ROUTES.AUTH}?mode=login`)}
+                      className="hidden md:inline-flex text-xs px-3 py-1.5 font-bold text-glowe-dark border-transparent hover:bg-white/80"
+                    >
+                      Iniciar sesión
+                    </Button>
+
+                    {/* Tablet y PC (>= md): Botón primario 'Registrarse' */}
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={() => navigate(`${ROUTES.AUTH}?mode=register`)}
+                      className="hidden md:inline-flex text-xs px-3.5 py-1.5 font-bold shadow-sm"
+                    >
+                      Registrarse
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

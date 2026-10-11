@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom'
-import { editorialCategories, quizOptions } from '@/features/products/fixtures/categories.fixture'
+import { editorialCategories } from '@/features/products/fixtures/categories.fixture'
 
 export default function EditorialMakeup() {
   const navigate = useNavigate()
@@ -30,7 +30,7 @@ export default function EditorialMakeup() {
             <button
               key={cat.name}
               onClick={() => handleClick(cat)}
-              className={`cursor-pointer group glass-card rounded-2xl p-4 text-center border-t-4 ${cat.border} flex flex-col items-center`}
+              className="cursor-pointer group glass-card rounded-2xl p-4 text-center flex flex-col items-center"
             >
               <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">{cat.icon}</span>
               <h3 className="font-bold text-xs text-glowe-dark">{cat.name}</h3>

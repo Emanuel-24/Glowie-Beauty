@@ -7,6 +7,8 @@ import Button from '@/shared/components/ui/Button'
 import Input from '@/shared/components/ui/Input'
 import MosaicLens from '@/features/auth/components/MosaicLens'
 import { usePageMeta } from '@/shared/hooks/usePageMeta'
+import { Eye } from 'lucide-react'
+import { EyeClosed } from 'lucide-react'
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -282,14 +284,15 @@ export default function Auth() {
                       onChange={setField}
                       aria-invalid={touched.password && !passwordValid}
                       className="!w-full !rounded-r-none !rounded-2xl border-0 bg-transparent !shadow-none ring-0 focus:!ring-0"
-                    />
+                      />
                     <button
                       type="button"
                       onClick={() => setShowPassword((current) => !current)}
                       className="mr-2 rounded-full p-2 text-glowe-muted transition-colors hover:bg-white/80 hover:text-glowe-dark cursor-pointer"
                       aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-                    >
-                      {showPassword ? 'Ocultar' : 'Ver'}
+                      >
+                      {showPassword ? <Eye size={16}/>: <EyeClosed size={16}/>}
+                        
                     </button>
                   </div>
                   {touched.password && !passwordValid && (

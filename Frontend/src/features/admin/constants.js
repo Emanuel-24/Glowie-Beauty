@@ -93,11 +93,22 @@ export const emptyOfferForm = {
   isFeaturedOffer: false,
 }
 
+export const emptyBundleForm = {
+  name: '',
+  desc: '',
+  price: '',
+  oldPrice: '',
+  image: '',
+  badge: 'TOP BUNDLE',
+  productIds: [],
+}
+
 export const navItems = [
   { id: 'dashboard', label: 'Dashboard', emoji: '◈' },
   { id: 'categories', label: 'Categoría de productos', emoji: '▣' },
   { id: 'tags', label: 'Etiquetas / Tags', emoji: '🏷️' },
   { id: 'products', label: 'Productos', emoji: '◌' },
+  { id: 'bundles', label: 'Combos y Kits', emoji: '🎁' },
   { id: 'offers', label: 'Ofertas y Descuentos', emoji: '⚡' },
   { id: 'orders', label: 'Compras', emoji: '◎' },
   { id: 'payments', label: 'Pagos y abonos', emoji: '◐' },

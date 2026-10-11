@@ -7,6 +7,10 @@ export default function FindYourGlow({ glowFilter, onSelectFilter }) {
 
   const borderColor = (tag) => {
     switch (tag) {
+      case 'natural':
+        return 'hover:border-glowe-blue-accent'
+      case 'radiante':
+        return 'hover:border-glowe-yellow-dark'
       case 'cabello':
         return 'hover:border-glowe-blue-dark'
       case 'renovar':
@@ -21,12 +25,9 @@ export default function FindYourGlow({ glowFilter, onSelectFilter }) {
   }
 
   return (
-    <section id="encuentra-tu-glow" className="pt-16 relative scroll-mt-24">
+    <section id="encuentra-tu-glow" className="pt-10 relative scroll-mt-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="inline-block px-3 py-1 rounded-full bg-glowe-yellow text-glowe-dark font-bold text-xs uppercase tracking-wider mb-2">
-            Experiencia Personalizada
-          </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-glowe-dark">Encuentra tu Glow ✨</h2>
           <p className="text-glowe-muted mt-2 text-sm sm:text-base">
             Selecciona la necesidad que buscas cubrir hoy y filtra tus productos al instante.

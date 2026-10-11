@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 
 export const normalizeProduct = (product = {}) => {
@@ -43,6 +44,12 @@ export const getAllProducts = async () => {
 };
 
 export const getProductByIdRecord = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de producto no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const product = await Product.findById(id).lean();
   if (!product) {
     const error = new Error('Producto no encontrado');
@@ -87,6 +94,12 @@ export const createProductRecord = async (payload = {}) => {
 };
 
 export const updateProductRecord = async (id, payload = {}) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de producto no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const currentProduct = await Product.findById(id);
 
   if (!currentProduct) {
@@ -183,6 +196,12 @@ export const batchUpdateFeaturedOffersRecord = async ({ offerEndDate, productIds
 };
 
 export const deleteProductRecord = async (id) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    const error = new Error('Identificador de producto no válido');
+    error.statusCode = 400;
+    throw error;
+  }
+
   const product = await Product.findByIdAndDelete(id);
 
   if (!product) {

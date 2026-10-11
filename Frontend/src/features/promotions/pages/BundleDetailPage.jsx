@@ -54,12 +54,15 @@ export default function ComboDetalle() {
 
   const handleBuy = async () => {
     if (!data?.combo) return
-    const product = await getProductById(data.combo.productId)
-    if (!product) {
-      showToast('No pudimos agregar el combo', 'Inténtalo de nuevo en unos segundos.')
-      return
-    }
-    addItem(product)
+    addItem({
+      id: data.combo.id || data.combo._id,
+      name: data.combo.name,
+      price: Number(data.combo.price || 0),
+      image: data.combo.image,
+      desc: data.combo.desc,
+      category: 'combos',
+      isBundle: true,
+    })
     showToast('¡Kit agregado!', `${data.combo.name} está en tu carrito.`, '🎁')
   }
 

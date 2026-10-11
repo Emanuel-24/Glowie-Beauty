@@ -72,15 +72,23 @@ export default function ProductsTab({
   }
 
   const handleDeleteProduct = async (id) => {
+    if (!id) return
     if (typeof window !== 'undefined' && window.confirm) {
       if (!window.confirm('¿Eliminar este producto del catálogo?')) return
     }
 
-    const result = await deleteProduct(id)
-    if (result?.ok === false) return
+    try {
+      const result = await deleteProduct(id)
+      if (result?.ok === false) {
+        showToast('Error', 'No se pudo retirar el producto.', '❌')
+        return
+      }
 
-    setProducts?.((prev) => prev.filter((product) => (product.id ?? product._id) !== id))
-    showToast('Producto eliminado', 'Se retiró del catálogo.', '🗑️')
+      setProducts?.((prev) => prev.filter((product) => (product.id ?? product._id) !== id))
+      showToast('Producto eliminado', 'Se retiró del catálogo.', '🗑️')
+    } catch (err) {
+      showToast('Error', err.message || 'No se pudo eliminar el producto.', '❌')
+    }
   }
 
   const handleProductSubmit = async (event) => {

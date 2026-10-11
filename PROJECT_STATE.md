@@ -268,6 +268,20 @@ Glowe Beauty/
 
 ---
 
+### ADR-023: Persistencia de Combos en MongoDB, Ciclo de Vida Contable de Pedidos y Saneamiento Reactivo del Panel Admin
+- **Fecha:** 10/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** Tras limpiar la base de datos de desarrollo (`clean-db.js`), se detectó que los combos seguían apareciendo debido al consumo de fixtures estáticos sin soporte backend, y en el Admin no era posible eliminar productos ni gestionar pedidos por persistencia en mocks y excepciones `CastError` no capturadas.
+- **Decisión:**
+  1. **Colección y Endpoints de Combos (Opción 1.A):** Creación del modelo `Bundle.js`, servicio `bundleService.js`, controlador `bundleController.js` y rutas `/api/bundles`. Integración en scripts `clean-db.js` y `seed.js`. Consumo en frontend vía `apiRequest('/bundles')`.
+  2. **Pestaña Administrativa de Combos (Opción 2.A):** Creación de `BundlesTab.jsx` y `BundleModal.jsx` dentro de `features/admin/tabs/bundles/`, integrado en `navItems` de `constants.js` y en `AdminPage.jsx`.
+  3. **Ciclo de Vida y Anulación Lógica de Pedidos (Opción 3.A):** Prohibición de borrado físico destructivo de órdenes en el Admin. La acción de la papelera muta el estado a `'Anulada'` (`updateOrder`), preservando el registro contable e histórico.
+  4. **Retiro de Creación Manual Falsa de Pedidos (Opción 4.A):** Supresión del botón "+ Crear compra" con payload dummy en `OrdersTab.jsx`; las órdenes solo nacen del flujo legítimo de compra del cliente.
+  5. **Saneamiento Reactivo de Estados Vacíos en Admin:** `useAdminData.js` inicializa en `[]` y asigna respuestas vacías reales de la BD sin retener `defaultProducts`, `defaultPurchases`, etc., permitiendo que `DataTable.jsx` renderice sus estados vacíos naturales.
+  6. **Validación de ObjectId y Manejo Robusto de Errores:** Validación previa con `mongoose.Types.ObjectId.isValid` en controladores/servicios de productos y órdenes (retornando HTTP 400 controlado en vez de 500 CastError) y captura con `try...catch` con toast de error en los handlers de acción del Admin.
+  7. **UI de Combos:** Sustitución del botón "Comprar Kit" en `BundlesSection.jsx` por el botón de acción suave con icono `Plus` idéntico al de `ProductCard.jsx`, y ocultamiento íntegro del bloque de encabezado promocional cuando no existen combos disponibles en base de datos.
+
+---
+
 ## 3. Estado de Módulos Clave
 
 | Módulo | Frontend | Backend | Estado | Pendientes inmediatos |
@@ -280,10 +294,10 @@ Glowe Beauty/
 | Categorías | `categoryService`, `Maquillaje/Cabello.jsx` | `categoryRoutes`, `categoryController` → `categoryService`, `Category` | ✅ 100% | Servicios desacoplados y validados |
 | Carrito | `CartContext`, `CartDrawer`, `QuantityStepper` | — | ✅ 100% | Persistencia local activa, sincronización lista |
 | Favoritos | `FavoritesContext`, `FavoritesDrawer`, `Favoritos.jsx` | — | ✅ 100% | Persistencia local activa, lazy loading implementado |
-| Checkout / Pedidos / WhatsApp | `Checkout.jsx`, `orderService`, `contact.js` | `orderRoutes`, `orderController` → `orderService`, `Order`, UTF-8 headers | 🟡 Pendiente Pre-Despliegue | Corregir endpoint wa.me a api.whatsapp.com/send para evitar reemplazo  de emojis de 4 bytes en redirección (ver Sección 5). |
+| Checkout / Pedidos / WhatsApp | `CheckoutPage.jsx`, `orderService.js`, `whatsapp.js` | `orderRoutes`, `orderController` → `orderService`, `Order`, UTF-8 headers | ✅ 100% | Ciclo de vida y anulación lógica asegurada sin borrado físico destructivo (ADR-023) |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ 100% | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` validados |
-| Combos y Ofertas (ADR-019) | `Combos.jsx`, `ComboDetalle.jsx`, `Ofertas.jsx`, `GlowDeals`, `NewsletterForm` | `Product` (`isOffer`, `discountPercentage`, fechas), `Subscriber` (`/api/newsletter`) | ✅ 100% | Empty state automático por temporizador o catálogo vacío, captura de leads y carrusel de 3 ofertas |
-| Panel Admin (Fase 8 / ADR-021) | `AdminPage.jsx`, tabs modulares (`features/admin/tabs/*`), `AdminModal`, `DataTable` | Rutas protegidas y controladores delegados | ✅ 100% | Monolito de 2,529 líneas descompuesto en pestañas $\le$ 300 líneas, AdminPage $\le$ 150 líneas, reportService dinámico (ahorro ~675 kB) y `src/pages/` purgado |
+| Combos y Ofertas (ADR-019, ADR-023) | `BundlesPage.jsx`, `BundleDetailPage.jsx`, `BundlesSection.jsx`, `OffersPage.jsx`, `bundleService.js` | `bundleRoutes`, `bundleController` → `bundleService`, `Bundle.js`, `Product`, `Subscriber` | ✅ 100% | Modelo y CRUD backend en `/api/bundles`, botón de añadir suave en UI, empty state sin encabezado residual |
+| Panel Admin (ADR-021, ADR-023) | `AdminPage.jsx`, tabs modulares (`features/admin/tabs/*`, `BundlesTab`), `AdminModal`, `DataTable` | Rutas protegidas y controladores delegados | ✅ 100% | Pestaña de Combos y Kits (Opción 2.A), anulación contable de órdenes, inicialización sin mocks ocultos y validación de IDs |
 
 ---
 

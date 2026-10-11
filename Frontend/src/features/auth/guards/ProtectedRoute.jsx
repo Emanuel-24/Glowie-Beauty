@@ -32,9 +32,5 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
     return <Navigate to="/" replace />
   }
 
-  if (!requireAdmin && user?.role === 'admin' && location.pathname !== '/admin') {
-    return <Navigate to="/admin" replace />
-  }
-
   return children
 }

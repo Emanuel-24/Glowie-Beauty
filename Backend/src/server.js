@@ -15,6 +15,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import tagRoutes from './routes/tagRoutes.js';
 import siteConfigRoutes from './routes/siteConfigRoutes.js';
 import subscriberRoutes from './routes/subscriberRoutes.js';
+import bundleRoutes from './routes/bundleRoutes.js';
 
 const app = express();
 const PORT = Number(process.env.PORT) || 5000;
@@ -55,6 +56,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/tags', tagRoutes);
 app.use('/api/site-config', siteConfigRoutes);
 app.use('/api/newsletter', subscriberRoutes);
+app.use('/api/bundles', bundleRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err);
