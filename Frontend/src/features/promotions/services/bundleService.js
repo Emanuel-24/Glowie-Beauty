@@ -105,9 +105,20 @@ export async function getGlowDeals() {
   try {
     const offers = await getOffers()
     if (Array.isArray(offers)) {
-      const featuredOffers = offers.filter((item) => Boolean(item.isFeaturedOffer))
-      const targetList = featuredOffers.length > 0 ? featuredOffers.slice(0, 3) : offers.slice(0, 3)
-      const deals = targetList.map((item) => {
+      const now = Date.now()
+      // Criterio estricto de Glow Deals (Punto 23):
+      // 1. isFeaturedOffer: true
+      // 2. offerEndDate configurada y vigente (futura)
+      const featuredOffers = offers.filter((item) => {
+        if (!item.isFeaturedOffer) return false
+        if (!item.offerEndDate) return false
+        const end = new Date(item.offerEndDate).getTime()
+        return !Number.isNaN(end) && end > now
+      })
+
+      // ÚNICAMENTE productos destacados vigentes (máximo 3).
+      // Nunca caer en ofertas regulares si no hay destacados.
+      const deals = featuredOffers.slice(0, 3).map((item) => {
         const discountPct =
           item.discountPercentage ||
           (item.oldPrice && item.oldPrice > item.price
@@ -122,7 +133,7 @@ export async function getGlowDeals() {
           discountPercentage: discountPct,
           discount: `${discountPct}% OFF`,
           image: item.image || item.images?.[0] || '',
-          isFeaturedOffer: Boolean(item.isFeaturedOffer),
+          isFeaturedOffer: true,
           offerEndDate: item.offerEndDate,
         }
       })

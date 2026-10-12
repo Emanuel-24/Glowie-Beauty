@@ -32,10 +32,20 @@ export async function deleteOrder(id) {
   return { ok: true, data: response?.data ?? { id } }
 }
 
-export async function getUserOrders() {
+export async function getUserOrders(user = null) {
   const response = await apiRequest('/orders')
   const payload = response?.data ?? response ?? []
-  if (Array.isArray(payload)) return payload
-  if (Array.isArray(response?.orders)) return response.orders
-  return []
+  const list = Array.isArray(payload) ? payload : (Array.isArray(response?.orders) ? response.orders : [])
+  if (!user) return list
+
+  return list.filter((ord) => {
+    const matchId = user._id || user.id
+    const matchEmail = (user.email || '').trim().toLowerCase()
+    const ordUserId = ord.userId?._id || ord.userId
+    const ordEmail = (ord.customerEmail || '').trim().toLowerCase()
+    return Boolean(
+      (matchId && String(ordUserId) === String(matchId)) ||
+      (matchEmail && ordEmail === matchEmail)
+    )
+  })
 }

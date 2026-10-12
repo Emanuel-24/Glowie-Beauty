@@ -4,8 +4,10 @@ import Payment from '../models/Payment.js';
 export const normalizePayment = (payment) => ({
   id: payment._id?.toString?.() ?? payment.id,
   orderId: payment.orderId?._id?.toString?.() ?? payment.orderId,
-  userId: payment.userId?._id?.toString?.() ?? payment.userId,
+  invoice: payment.orderId?.invoice || '',
+  customer: payment.orderId?.customer || payment.userId?.name || 'Cliente',
   amount: Number(payment.amount || 0),
+  balance: payment.orderId?.balance !== undefined ? Number(payment.orderId.balance) : undefined,
   method: payment.method || 'Efectivo',
   reference: payment.reference || '',
   status: payment.status || 'Confirmado',
@@ -33,7 +35,7 @@ export const syncOrderPaymentStatus = async (orderId) => {
 
 export const getAllPayments = async () => {
   const payments = await Payment.find({})
-    .populate('orderId', 'invoice customer total')
+    .populate('orderId', 'invoice customer total amountPaid balance')
     .populate('userId', 'name email')
     .populate('registeredBy', 'name email')
     .sort({ createdAt: -1 })

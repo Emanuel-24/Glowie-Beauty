@@ -2,6 +2,7 @@ import HeroSection from '@/features/home/components/HeroSection'
 import { CategoryPlayground } from '@/features/products'
 import TrustBadges from '@/features/home/components/TrustBadges'
 import SocialProof from '@/features/home/components/SocialProof'
+import Reveal from '@/shared/components/ui/Reveal'
 import { usePageMeta } from '@/shared/hooks/usePageMeta'
 
 export default function HomePage() {
@@ -13,9 +14,15 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <CategoryPlayground />
-      <TrustBadges />
-      <SocialProof />
+      <Reveal>
+        <CategoryPlayground />
+      </Reveal>
+      <Reveal delay={60}>
+        <TrustBadges />
+      </Reveal>
+      <Reveal delay={60}>
+        <SocialProof />
+      </Reveal>
     </>
   )
 }

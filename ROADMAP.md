@@ -3,19 +3,20 @@
 > Este documento sirve como memoria persistente y tablero de control para la IA y el equipo de desarrollo. Marcar con `[x]` a medida que se completen las tareas.
 
 ## 📊 Estado del Proyecto
-- **Fase Actual:** Proyecto Finalizado con Éxito (100%)
-- **Última fase completada:** Fase 5 (Automatización de Pruebas y Validación) — 05/10/2026
-- **Progreso General:** 100% (5 de 5 fases)
+- **Fase Actual:** Plan Integral de Mejoras Finalizado con Éxito (100%)
+- **Última fase completada:** Fase 6 (Usuarios, Seguridad, Sesiones y Consistencia) — 11/10/2026
+- **Progreso General:** 100% (6 de 6 fases de mejoras completadas)
 
 `[██████████] 100%`
 
-| Fase | Estado |
-|------|--------|
-| 1. Memoria y reglas de la IA | ✅ Completada |
-| 2. Auditoría y reestructuración | ✅ Completada |
-| 3. Rendimiento del agente | ✅ Completada |
-| 4. SEO, accesibilidad y frontend | ✅ Completada |
-| 5. Pruebas y validación | ✅ Completada |
+| Fase de Mejoras | Estado |
+|---|---|
+| 1. Componentes UI de Control y Experiencia Global | ✅ Completada |
+| 2. Dashboard y Exportación Temporal | ✅ Completada |
+| 3. Catálogo, Productos, Categorías y Etiquetas | ✅ Completada |
+| 4. Ofertas Flash y Lógica Glow Deals | ✅ Completada |
+| 5. Pedidos, Ventas y Checkout Web | ✅ Completada |
+| 6. Usuarios, Seguridad, Sesiones y Consistencia | ✅ Completada |
 
 ---
 
@@ -83,3 +84,14 @@
 - [x] **Fase 8: Descomposición de Admin:** 8 pestañas modulares, exportaciones diferidas en `reportService.js`, eliminación de `Admin.jsx`.
 - [x] **Fase 9: App Shell y Router Lazy:** `src/app/` con enrutador code-splitting (`React.lazy`), eliminación de carpetas legacy (`src/pages`, `src/components`, `src/services`).
 - [x] **Fase 10: Endurecimiento y Cierre:** Reglas ESLint con límites de capa, CI con Madge (`madge --circular`), pruebas unitarias puras (29 tests) y ADR-0001.
+
+---
+
+### PLAN DE MEJORAS INTEGRALES (ADMIN Y TIENDA WEB - FASES 1 A 6)
+- [x] **Fase 1: Componentes UI de Control y Experiencia Global:** `ButtonLoading`, `ConfirmDialog` / `useConfirm`, `PriceInput`, `CustomDatePicker` y normalización de modales sin pérdida de foco.
+- [x] **Fase 2: Dashboard y Exportación Temporal:** Filtros analíticos de Año y Mes, gráfica mensual de ventas, modal reutilizable `ExportReportModal` para exportaciones por rango de fechas (Excel/PDF).
+- [x] **Fase 3: Catálogo, Productos, Categorías y Etiquetas:** Erradicación del bug de foco en categorías, creación automática de tags, integridad relacional (bloqueo de borrado si hay dependencias), ciclo de vida de productos con trazabilidad de ventas, precio coste y modales de ver detalle para productos y combos.
+- [x] **Fase 4: Ofertas Flash y Lógica Glow Deals:** Reestructuración de modal de ofertas con mini-buscador de productos (`OfferProductSelector`), acción directa `Zap` en catálogo con redirección fluida, y filtrado estricto de ofertas destacadas en carrusel Glow Deals.
+- [x] **Fase 5: Pedidos, Ventas y Checkout Web:** Diagnóstico y reparación de compras invitadas (middleware `optionalProtect`), unificación a 3 métodos de pago estándar, pantalla de éxito con enlace directo a WhatsApp (`CheckoutSuccess`), bifurcación administrativa entre "Pedidos" entrantes (`IncomingOrdersTab`) y "Ventas" confirmadas (`OrdersTab`).
+- [x] **Fase 6: Usuarios, Seguridad, Sesiones y Consistencia:** Consistencia de badges de estado y stock en todas las tablas, modal interactiva `CreateUserModal` con autogeneración reactiva de correo `nombre.apellido@glowe.com`, expiración diferenciada de sesiones JWT (24h admin vs 60d cliente), edición y carga local de imágenes WebP en Comunidad Glowe, notificaciones de pedidos pendientes en `AdminHeader` y prevención de pérdida de datos con `useUnsavedChangesWarning`.
+

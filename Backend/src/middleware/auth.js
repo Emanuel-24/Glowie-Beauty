@@ -73,3 +73,37 @@ export const requireAdmin = (req, res, next) => {
 
   next();
 };
+
+export const optionalProtect = async (req, res, next) => {
+  try {
+    const rawHeader = req.headers.authorization || req.headers.Authorization || '';
+    const authHeader = String(rawHeader).trim();
+    let token = '';
+
+    if (authHeader.toLowerCase().startsWith('bearer ')) {
+      token = authHeader.slice(7).trim();
+    } else if (authHeader) {
+      token = authHeader;
+    }
+
+    if (!token) {
+      req.user = null;
+      return next();
+    }
+
+    const decoded = jwt.verify(token, getJwtSecret());
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (user && user.status !== 'Bloqueado') {
+      req.user = user;
+    } else {
+      req.user = null;
+    }
+
+    next();
+  } catch {
+    req.user = null;
+    next();
+  }
+};
+

@@ -2,9 +2,10 @@ export { default as AdminModal } from './components/AdminModal'
 export { default as DataTable } from './components/DataTable'
 export { default as StatusBadge } from './components/StatusBadge'
 export { default as ActionButton } from './components/ActionButton'
+export { default as ExportReportModal } from './components/ExportReportModal'
 
 export * as reportService from './services/reportService'
-export { exportToExcel, exportToPdf } from './services/reportService'
+export { exportToExcel, exportToPdf, exportReport } from './services/reportService'
 
 export * as userService from './services/userService'
 export { getUsers, createUser, updateUser, deleteUser } from './services/userService'

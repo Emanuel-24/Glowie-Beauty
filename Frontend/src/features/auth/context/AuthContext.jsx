@@ -124,7 +124,13 @@ export function AuthProvider({ children }) {
         if (token) {
           setToken(token)
         }
+        persistUser(userWithToken)
         setUser(userWithToken)
+        window.dispatchEvent(
+          new CustomEvent('glowe:auth:login', {
+            detail: { user: userWithToken },
+          }),
+        )
       }
       return result
     } catch (error) {
@@ -141,7 +147,13 @@ export function AuthProvider({ children }) {
         if (token) {
           setToken(token)
         }
+        persistUser(userWithToken)
         setUser(userWithToken)
+        window.dispatchEvent(
+          new CustomEvent('glowe:auth:login', {
+            detail: { user: userWithToken },
+          }),
+        )
       }
       return result
     } catch (error) {

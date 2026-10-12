@@ -30,10 +30,10 @@ export default function Button({
     <button
       type={type}
       className={[
-        'inline-flex items-center justify-center gap-2 rounded-full font-bold whitespace-nowrap transition-all duration-300',
+        'inline-flex items-center justify-center gap-2 rounded-full font-bold whitespace-nowrap transition-all duration-300 cursor-pointer active:scale-95',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-        'disabled:opacity-60 disabled:pointer-events-none',
-        loading ? 'opacity-70 pointer-events-none' : '',
+        'disabled:opacity-60 disabled:pointer-events-none disabled:cursor-not-allowed disabled:active:scale-100',
+        loading ? 'opacity-70 pointer-events-none active:scale-100' : '',
         variants[variant] || variants.plain,
         sizes[size] || sizes.md,
         fullWidth ? 'w-full' : '',

@@ -13,7 +13,7 @@ export default function OffersTable({
           <thead>
             <tr className="border-b border-pink-100 bg-white/60 text-[10px] font-bold uppercase tracking-[0.16em] text-glowe-muted">
               <th className="py-3.5 pl-6 pr-3">Producto</th>
-              <th className="px-3 py-3.5">Precio Regular</th>
+              <th className="px-3 py-3.5">Precio Actual</th>
               <th className="px-3 py-3.5">Precio Oferta</th>
               <th className="px-3 py-3.5">% Descuento</th>
               <th className="px-3 py-3.5">Vigencia</th>

@@ -1,5 +1,6 @@
 import {
   getAllOrders,
+  getOrdersByUser,
   getOrderByIdRecord,
   createOrderRecord,
   updateOrderRecord,
@@ -16,7 +17,10 @@ const sendResponse = (res, statusCode, success, data, message) => {
 
 export const getOrders = async (req, res) => {
   try {
-    const orders = await getAllOrders();
+    const isAdmin = req.user?.role?.toLowerCase() === 'admin';
+    const orders = isAdmin
+      ? await getAllOrders()
+      : await getOrdersByUser({ userId: req.user?._id, email: req.user?.email });
     return sendResponse(res, 200, true, orders, 'Pedidos consultados correctamente');
   } catch (error) {
     return sendResponse(res, 500, false, null, 'No se pudieron consultar los pedidos');
@@ -36,19 +40,14 @@ export const getOrderById = async (req, res) => {
 };
 
 export const createOrder = async (req, res) => {
-  const { items, total, shippingAddress, customer, invoice, status } = req.body;
   const authenticatedUserId = req.user?._id;
+  const userName = req.user?.name;
 
   try {
     const order = await createOrderRecord({
-      items,
-      total,
-      shippingAddress,
-      customer,
-      invoice,
-      status,
-      userId: authenticatedUserId,
-      userName: req.user?.name,
+      ...req.body,
+      userId: authenticatedUserId || req.body.userId,
+      userName,
     });
     return sendResponse(res, 201, true, order, 'Orden creada correctamente');
   } catch (error) {
@@ -59,16 +58,9 @@ export const createOrder = async (req, res) => {
 
 export const updateOrder = async (req, res) => {
   const { id } = req.params;
-  const { status, total, customer, invoice, shippingAddress } = req.body;
 
   try {
-    const order = await updateOrderRecord(id, {
-      status,
-      total,
-      customer,
-      invoice,
-      shippingAddress,
-    });
+    const order = await updateOrderRecord(id, req.body);
     return sendResponse(res, 200, true, order, 'Pedido actualizado correctamente');
   } catch (error) {
     const statusCode = error.statusCode || 500;

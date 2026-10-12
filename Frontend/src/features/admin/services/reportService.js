@@ -45,3 +45,11 @@ export async function exportToPdf({ title, moduleTitle = 'General', payload }) {
 
   doc.save(`${title}.pdf`)
 }
+
+export async function exportReport({ title = 'reporte-glowe', moduleTitle = 'General', payload = [], format = 'pdf' }) {
+  if (format === 'excel') {
+    return exportToExcel({ title, payload, sheetName: moduleTitle })
+  }
+  return exportToPdf({ title, moduleTitle, payload })
+}
+

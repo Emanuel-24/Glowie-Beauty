@@ -11,102 +11,19 @@ import Badge from '@/shared/components/ui/Badge'
 import Card from '@/shared/components/ui/Card'
 import PillGroup from '@/shared/components/ui/PillGroup'
 import QuantityStepper from '@/shared/components/ui/QuantityStepper'
-import ProductGrid from '@/features/products/components/ProductGrid'
-import ProductCard from '@/features/products/components/ProductCard'
+import Reveal from '@/shared/components/ui/Reveal'
+import ProductGallery from '@/features/products/components/ProductGallery'
+import RoutineCarousel from '@/features/products/components/RoutineCarousel'
+import ProductDetailsAccordion from '@/features/products/components/ProductDetailsAccordion'
 import { variantOptionsFor, detailsFor } from '@/features/products/utils/variants'
+import {
+  normalizeProduct,
+  categoryOptionLabel,
+  categoryRouteFor,
+  priceLabel,
+  discountPercent,
+} from '@/features/products/utils/productHelpers'
 import { usePageMeta } from '@/shared/hooks/usePageMeta'
-
-const normalizeProduct = (rawProduct) => {
-  if (!rawProduct || typeof rawProduct !== 'object') return null
-
-  const images = Array.isArray(rawProduct.images) ? rawProduct.images.filter(Boolean) : []
-  const image = rawProduct.image || images[0] || ''
-  const id = rawProduct.id ?? rawProduct._id ?? rawProduct.productId ?? null
-
-  return {
-    ...rawProduct,
-    id,
-    _id: rawProduct._id ?? id ?? null,
-    name: rawProduct.name ?? rawProduct.title ?? 'Producto Glowe',
-    title: rawProduct.title ?? rawProduct.name ?? 'Producto Glowe',
-    brand: rawProduct.brand || 'Glowe Select',
-    category: rawProduct.category ?? 'maquillaje',
-    image,
-    images: images.length > 0 ? images : image ? [image] : [],
-    desc: rawProduct.desc ?? rawProduct.description ?? '',
-    description: rawProduct.description ?? rawProduct.desc ?? '',
-    tags: Array.isArray(rawProduct.tags) ? rawProduct.tags : [],
-    price: Number(rawProduct.price ?? 0),
-    oldPrice: rawProduct.oldPrice != null ? Number(rawProduct.oldPrice) : null,
-    rating: Number(rawProduct.rating ?? 4.8),
-    badge: rawProduct.badge ?? '',
-  }
-}
-
-const categoryOptionLabel = (category) => {
-  if (category === 'maquillaje') return 'Maquillaje'
-  if (category === 'cabello') return 'Cabello'
-  return 'Descubrir'
-}
-
-const categoryRouteFor = (category) => {
-  if (category === 'maquillaje') return '/maquillaje'
-  if (category === 'cabello') return '/cabello'
-  return '/descubrir'
-}
-
-const priceLabel = (value) => `$${Number(value).toLocaleString('es-CO')}`
-
-const discountPercent = (product) => {
-  if (!product || !product.oldPrice || !product.price) return null
-  return Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
-}
-
-function RoutineCarousel({ items }) {
-  const [index, setIndex] = useState(0)
-  const visibleItems = items.slice(index, index + 2)
-
-  const canGoPrev = index > 0
-  const canGoNext = index + 2 < items.length
-
-  if (!items.length) return null
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="h-px flex-1 bg-white/70" />
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setIndex((current) => Math.max(0, current - 2))}
-            disabled={!canGoPrev}
-            aria-label="Ver productos anteriores"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/75 text-lg text-glowe-dark shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ←
-          </button>
-          <button
-            type="button"
-            onClick={() => setIndex((current) => Math.min(items.length - 2, current + 2))}
-            disabled={!canGoNext}
-            aria-label="Ver más productos"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-white/80 bg-white/75 text-lg text-glowe-dark shadow-sm transition hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            →
-          </button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {visibleItems.map((product) => (
-          <div key={product.id} className="min-w-0">
-            <ProductCard product={product} />
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
 
 export default function Producto() {
   const { id } = useParams()
@@ -228,28 +145,18 @@ export default function Producto() {
     )
   }
 
-  if (error) {
+  if (error || !product) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center" role="alert">
         <Card className="max-w-md mx-auto p-8 text-center">
-          <h1 className="font-serif text-2xl font-bold text-glowe-dark mb-2">Ups, algo salio mal</h1>
-          <p className="text-sm text-glowe-muted mb-6">No pudimos cargar este producto. Intenta de nuevo.</p>
+          <h1 className="font-serif text-2xl font-bold text-glowe-dark mb-2">
+            {error ? 'Ups, algo salio mal' : 'Producto no encontrado'}
+          </h1>
+          <p className="text-sm text-glowe-muted mb-6">
+            {error ? 'No pudimos cargar este producto. Intenta de nuevo.' : 'El producto que buscas no existe o fue removido.'}
+          </p>
           <Button variant="glass" onClick={() => navigate('/descubrir')}>
-            Volver al catalogo
-          </Button>
-        </Card>
-      </div>
-    )
-  }
-
-  if (!product) {
-    return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Card className="max-w-md mx-auto p-8 text-center">
-          <h1 className="font-serif text-2xl font-bold text-glowe-dark mb-2">Producto no encontrado</h1>
-          <p className="text-sm text-glowe-muted mb-6">El producto que buscas no existe o fue removido.</p>
-          <Button variant="glass" onClick={() => navigate('/descubrir')}>
-            Explorar el catalogo
+            {error ? 'Volver al catalogo' : 'Explorar el catalogo'}
           </Button>
         </Card>
       </div>
@@ -275,40 +182,12 @@ export default function Producto() {
         </nav>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          <div className="relative">
-            <Card radius="3xl" className="overflow-hidden p-0 lg:sticky lg:top-28">
-              <div className="relative">
-                <img
-                  src={galleryImages[selectedImage] || product.image}
-                  alt={product.name}
-                  className="w-full aspect-square object-cover"
-                />
-                {product.badge && (
-                  <Badge tone="pink" className="absolute top-4 left-4">
-                    {product.badge}
-                  </Badge>
-                )}
-              </div>
-
-              {galleryImages.length > 1 && (
-                <div className="grid grid-cols-4 gap-2 p-2 sm:p-3">
-                  {galleryImages.map((image, index) => (
-                    <button
-                      key={`${product.id}-thumb-${index}`}
-                      type="button"
-                      onClick={() => setSelectedImage(index)}
-                      className={`overflow-hidden rounded-xl border transition-all ${
-                        selectedImage === index ? 'border-glowe-pink-accent ring-2 ring-glowe-pink-soft' : 'border-white/80'
-                      }`}
-                      aria-label={`Ver imagen ${index + 1} de ${product.name}`}
-                    >
-                      <img src={image} alt={`${product.name} vista ${index + 1}`} className="h-14 w-full object-cover sm:h-16" loading="lazy" />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </Card>
-          </div>
+          <ProductGallery
+            product={product}
+            galleryImages={galleryImages}
+            selectedImage={selectedImage}
+            onSelectImage={setSelectedImage}
+          />
 
           <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -353,30 +232,7 @@ export default function Producto() {
 
             <p className="text-sm sm:text-base text-glowe-muted leading-relaxed">{product.desc}</p>
 
-            {detailsInfo && (
-              <details className="group mt-4 rounded-2xl border border-glowe-pink-soft bg-white/70">
-                <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm font-bold text-glowe-dark">
-                  <span>Detalles de {product.name}</span>
-                  <span aria-hidden="true" className="transition-transform group-open:rotate-180">v</span>
-                </summary>
-                <div className="space-y-4 px-4 pb-4 pt-2">
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-glowe-muted mb-2">Ingredientes</h3>
-                    {detailsInfo?.ingredients?.length > 0 ? (
-                      <ul className="list-disc pl-5 space-y-1 text-sm text-glowe-muted">
-                        {detailsInfo.ingredients.map((ing, i) => <li key={i}>{ing}</li>)}
-                      </ul>
-                    ) : (
-                      <p className="text-sm text-glowe-muted">Informacion de ingredientes no disponible para esta categoria.</p>
-                    )}
-                  </div>
-                  <div>
-                    <h3 className="text-xs font-bold uppercase tracking-wider text-glowe-muted mb-2">Como usarlo</h3>
-                    <p className="text-sm text-glowe-muted leading-relaxed">{detailsInfo.tips || 'Sigue las indicaciones del empaque.'}</p>
-                  </div>
-                </div>
-              </details>
-            )}
+            <ProductDetailsAccordion product={product} detailsInfo={detailsInfo} />
 
             {product && variantOptionsFor(product) && (
               <div className="space-y-3">
@@ -422,13 +278,13 @@ export default function Producto() {
             </div>
 
             {related.length > 0 && (
-              <div className="mt-6">
+              <Reveal delay={80} className="mt-6">
                 <div className="mb-4">
                   <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-glowe-pink-accent">Los favoritos de tu rutina</p>
                   <h2 className="mt-2 font-serif text-2xl font-bold text-glowe-dark">{relatedTitle}</h2>
                 </div>
                 <RoutineCarousel items={related} />
-              </div>
+              </Reveal>
             )}
           </div>
         </div>

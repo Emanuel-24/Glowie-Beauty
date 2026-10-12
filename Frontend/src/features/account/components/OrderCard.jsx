@@ -1,6 +1,20 @@
-import { MessageCircle, RotateCcw } from 'lucide-react'
+import { MessageCircle, RotateCcw, MapPin, CreditCard } from 'lucide-react'
 import OrderStatusBadge, { getStatusConfig } from './OrderStatusBadge'
 import { getWhatsAppUrl } from '@/shared/utils/whatsapp'
+
+const PAYMENT_METHOD_LABELS = {
+  contra_entrega: 'Contra entrega',
+  abono: 'Abono / Crédito',
+  transferencia_completa: 'Transferencia completa',
+  efectivo: 'Efectivo',
+  tarjeta: 'Tarjeta débito / crédito',
+  nequi: 'Nequi / Daviplata',
+}
+
+const formatPaymentMethod = (method) => {
+  if (!method) return 'Por coordinar'
+  return PAYMENT_METHOD_LABELS[method] || method
+}
 
 const formatOrderTotal = (total) => {
   if (typeof total === 'string' && total.startsWith('$')) return total
@@ -52,7 +66,7 @@ export default function OrderCard({ order, customerName = '', onReorder }) {
     <article className="rounded-3xl border border-[#f0e3df] bg-white p-5 shadow-sm transition-all sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3 border-b border-[#f3e9e7] pb-4">
         <div>
-          <h3 className="text-sm font-semibold text-[#2D2A2E]">Pedido #{orderId}</h3>
+          <h3 className="text-sm font-semibold text-[#2D2A2E]">Pedido #{order.invoice || orderId}</h3>
           <p className="mt-1 text-xs text-[#78716C]">{displayDate}</p>
         </div>
         <OrderStatusBadge status={order.status} />
@@ -83,6 +97,35 @@ export default function OrderCard({ order, customerName = '', onReorder }) {
             </div>
           )
         })}
+      </div>
+
+      {/* Información visible de Entrega y Método de Pago */}
+      <div className="grid gap-3 rounded-2xl border border-[#f3e9e7] bg-[#FAF8F5]/80 p-3.5 sm:grid-cols-2 text-xs">
+        <div className="flex items-start gap-2.5">
+          <MapPin className="size-4 shrink-0 text-[#FF758F] mt-0.5" aria-hidden="true" />
+          <div className="min-w-0">
+            <span className="block font-bold text-[10px] uppercase tracking-wider text-[#78716C]">
+              Dirección de Entrega
+            </span>
+            <p className="mt-0.5 font-medium text-[#2D2A2E] leading-relaxed">
+              {[order.shippingAddress || 'Dirección por coordinar', order.customerCity, order.customerDepartment]
+                .filter(Boolean)
+                .join(', ')}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-start gap-2.5">
+          <CreditCard className="size-4 shrink-0 text-[#59b1aa] mt-0.5" aria-hidden="true" />
+          <div className="min-w-0">
+            <span className="block font-bold text-[10px] uppercase tracking-wider text-[#78716C]">
+              Método de Pago
+            </span>
+            <p className="mt-0.5 font-semibold text-[#2D2A2E]">
+              {formatPaymentMethod(order.paymentMethod)}
+            </p>
+          </div>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 border-t border-[#f3e9e7] pt-4 sm:flex-row sm:items-center sm:justify-between">

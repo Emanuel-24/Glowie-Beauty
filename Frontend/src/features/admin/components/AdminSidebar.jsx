@@ -1,4 +1,33 @@
+import {
+  CreditCard,
+  Gift,
+  Inbox,
+  Layers,
+  LayoutDashboard,
+  Package,
+  Settings,
+  ShieldCheck,
+  ShoppingBag,
+  Tag,
+  Users,
+  Zap,
+} from 'lucide-react'
 import GloweeLogo from './GloweeLogo'
+
+const iconMap = {
+  LayoutDashboard,
+  Inbox,
+  Layers,
+  Tag,
+  Package,
+  Gift,
+  Zap,
+  ShoppingBag,
+  CreditCard,
+  Users,
+  ShieldCheck,
+  Settings,
+}
 
 export default function AdminSidebar({
   mobileMenuOpen,
@@ -13,6 +42,8 @@ export default function AdminSidebar({
     switch (id) {
       case 'dashboard':
         return '•'
+      case 'incomingOrders':
+        return adminData.purchases.filter((p) => (p.status || 'Pendiente') === 'Pendiente').length
       case 'categories':
         return adminData.categories.length
       case 'tags':
@@ -24,11 +55,13 @@ export default function AdminSidebar({
       case 'offers':
         return adminData.products.filter((p) => p.isOffer).length
       case 'orders':
-        return adminData.purchases.length
+        return adminData.purchases.filter((p) => (p.status || '') !== 'Pendiente').length
       case 'payments':
         return adminData.payments.length
+      case 'roles':
+        return 4
       case 'siteConfig':
-        return '⚙️'
+        return null
       default:
         return adminData.users.length
     }
@@ -61,27 +94,34 @@ export default function AdminSidebar({
       <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[0.24em] text-glowe-muted">
         Menú principal
       </p>
-      <nav className="space-y-2">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelectModule(item.id)}
-            className={`flex w-full items-center justify-between rounded-2xl px-3 py-3 text-left text-sm font-medium transition-all ${
-              activeModule === item.id
-                ? 'bg-gradient-to-r from-glowe-pink/20 to-glowe-blue/15 text-glowe-dark shadow-sm ring-1 ring-white/70'
-                : 'text-glowe-muted hover:bg-white/60 hover:text-glowe-dark'
-            }`}
-          >
-            <span className="flex items-center gap-3">
-              <span className="text-base">{item.emoji}</span>
-              {item.label}
-            </span>
-            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold text-glowe-pink-accent">
-              {getBadgeValue(item.id)}
-            </span>
-          </button>
-        ))}
+      <nav className="space-y-1.5">
+        {navItems.map((item) => {
+          const IconComponent = iconMap[item.iconName] || LayoutDashboard
+          const badgeValue = getBadgeValue(item.id)
+
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => onSelectModule(item.id)}
+              className={`flex w-full items-center justify-between rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition-all ${
+                activeModule === item.id
+                  ? 'bg-gradient-to-r from-glowe-pink/20 to-glowe-blue/15 text-glowe-dark shadow-xs ring-1 ring-white/70'
+                  : 'text-glowe-muted hover:bg-white/60 hover:text-glowe-dark'
+              }`}
+            >
+              <span className="flex items-center gap-3">
+                <IconComponent className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">{item.label}</span>
+              </span>
+              {badgeValue !== null && (
+                <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-bold text-glowe-pink-accent">
+                  {badgeValue}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </nav>
 
       <div className="mt-auto pt-6">

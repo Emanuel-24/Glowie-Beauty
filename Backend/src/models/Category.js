@@ -29,21 +29,29 @@ const categorySchema = new mongoose.Schema(
   }
 );
 
-categorySchema.pre('validate', function normalizeCategory(next) {
+categorySchema.pre('validate', function normalizeCategory() {
+  if (this.name) {
+    this.name = this.name.trim();
+  }
+
+  if (!this.name) {
+    throw new Error('La categoría debe tener un nombre válido.');
+  }
+
   if (!this.slug && this.name) {
     this.slug = this.name
       .toLowerCase()
       .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
       .replace(/[^a-z0-9\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-');
   }
 
-  if (!this.name) {
-    return next(new Error('La categoría debe tener un nombre válido.'));
+  if (this.description === undefined || this.description === null) {
+    this.description = '';
   }
-
-  next();
 });
 
 const Category = mongoose.model('Category', categorySchema);

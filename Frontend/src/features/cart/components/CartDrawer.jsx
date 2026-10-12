@@ -47,12 +47,29 @@ export default function CartDrawer() {
   useEffect(() => {
     if (!isOpen) return undefined
 
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    const originalBodyPaddingRight = document.body.style.paddingRight
+
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') closeCart()
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
+      document.body.style.paddingRight = originalBodyPaddingRight
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [isOpen, closeCart])
 
   const emptyCartRecommendations = useMemo(
@@ -76,12 +93,12 @@ closeCart()
       }`}
       aria-hidden={!isOpen}
     >
-      <div className="absolute inset-0 bg-glowe-dark/40 backdrop-blur-sm" onClick={closeCart} />
+      <div className="absolute inset-0 bg-glowe-dark/40 backdrop-blur-sm touch-none select-none" onClick={closeCart} />
       <aside
         role="dialog"
         aria-modal="true"
         aria-label="Carrito de compras"
-        className={`absolute inset-y-0 right-0 flex h-[100dvh] w-full max-w-md flex-col bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-md transition-transform duration-300 sm:p-6 ${
+        className={`absolute inset-y-0 right-0 flex h-[100dvh] w-full max-w-md flex-col bg-white/95 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl backdrop-blur-md transition-transform duration-300 sm:p-6 overscroll-contain ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
@@ -93,7 +110,7 @@ closeCart()
             </button>
           </div>
 
-          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4 pr-1">
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto py-4 pr-1 overscroll-contain">
             {items.length === 0 ? (
               <div className="space-y-4 py-4">
                 <div className="text-center space-y-2">
@@ -106,7 +123,7 @@ closeCart()
                     }}
                     className="text-xs font-bold text-glowe-pink-accent hover:underline"
                   >
-                    Ver productos recomendados
+                    Ver productos
                   </button>
                 </div>
 

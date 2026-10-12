@@ -68,18 +68,21 @@ export default function HeroSection() {
   useEffect(() => {
     if (!rootRef.current) return undefined
 
+    // Respetar preferencia de reducción de movimiento
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined
+    }
+
     const ctx = gsap.context(() => {
       const items = rootRef.current.querySelectorAll('[data-hero-item]')
       gsap.from(items, {
-        y: 28,
+        y: 14,
         opacity: 0,
-        duration: 0.7,
-        ease: 'power3.out',
-        stagger: 0.1,
+        duration: 0.45,
+        ease: 'power2.out',
+        stagger: 0.06,
+        clearProps: 'transform,opacity',
       })
-
-      // Las tarjetas flotantes deben mantenerse visibles con contraste estable.
-      // El efecto de GSAP sobre opacity hacía que se desvanecieran al cargar.
     }, rootRef)
 
     return () => ctx.revert()

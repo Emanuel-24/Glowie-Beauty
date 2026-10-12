@@ -7,8 +7,15 @@ import { getPayments } from '@/features/admin/services/paymentService'
 import { getTags } from '@/features/products/services/tagService'
 import { getBundles } from '@/features/promotions/services/bundleService'
 import { getSiteConfig, defaultSiteConfig } from '@/features/home/services/siteConfigService'
-import { exportToPdf } from '@/features/admin/services/reportService'
-import { formatCOP, toDayKey } from '@/features/admin/constants'
+import { exportReport } from '@/features/admin/services/reportService'
+import { formatCOP } from '@/features/admin/constants'
+import {
+  calculateAvailableYears,
+  filterPurchasesByPeriod,
+  calculateDashboardSummary,
+  calculateSalesChart,
+  calculateLast7DaysActivity,
+} from '@/features/admin/utils/adminMetrics'
 
 export function useAdminData() {
   const [products, setProducts] = useState([])
@@ -24,12 +31,14 @@ export function useAdminData() {
     dashboard: '',
     categories: '',
     products: '',
+    incomingOrders: '',
     orders: '',
     payments: '',
     users: '',
     offers: '',
     tags: '',
     bundles: '',
+    roles: '',
   })
 
   useEffect(() => {
@@ -73,6 +82,7 @@ export function useAdminData() {
               brand: item.brand || 'Glowe Select',
               category: item.category || 'maquillaje',
               price: Number(item.price ?? 0),
+              costPrice: Number(item.costPrice ?? 0),
               oldPrice: item.oldPrice != null ? Number(item.oldPrice) : null,
               stock: Number(item.stock ?? 0),
               image: item.image || item.images?.[0] || '',
@@ -117,9 +127,18 @@ export function useAdminData() {
                 date: item.createdAt ? createdAt.toLocaleDateString('es-CO') : 'Hoy',
                 createdAt,
                 customer: item.customer || 'Cliente Glowe',
+                customerPhone: item.customerPhone || item.phone || '',
+                customerEmail: item.customerEmail || item.email || '',
+                customerCedula: item.customerCedula || item.cedula || '',
+                customerCity: item.customerCity || item.city || '',
+                customerDepartment: item.customerDepartment || item.department || '',
                 total: Number(item.total ?? 0),
+                subtotal: Number(item.subtotal ?? item.total ?? 0),
+                shippingCost: Number(item.shippingCost ?? 0),
+                paymentMethod: item.paymentMethod || 'contra_entrega',
+                notes: item.notes || '',
                 status: item.status || 'Pendiente',
-                statusTone: item.status === 'Completada' ? 'success' : item.status === 'Anulada' ? 'danger' : 'warning',
+                statusTone: item.status === 'Completada' ? 'success' : item.status === 'Anulada' ? 'danger' : item.status === 'Confirmada' ? 'info' : 'warning',
                 items: Array.isArray(item.items) ? item.items : [],
                 shippingAddress: item.shippingAddress || 'No especificada',
               }
@@ -131,14 +150,27 @@ export function useAdminData() {
 
         if (userItems.status === 'fulfilled' && Array.isArray(userItems.value)) {
           setUsers(
-            userItems.value.map((item, index) => ({
-              id: item.id ?? item._id ?? index + 1,
-              name: item.name || 'Usuario Glowe',
-              email: item.email || 'usuario@glowe.com',
-              role: item.role === 'admin' ? 'Admin' : 'Cliente',
-              status: item.status === 'Bloqueado' ? 'Bloqueado' : 'Activo',
-              statusTone: item.status === 'Bloqueado' ? 'danger' : 'success',
-            })),
+            userItems.value.map((item, index) => {
+              const roleNormalized =
+                item.role === 'admin'
+                  ? 'Admin'
+                  : item.role === 'editor'
+                    ? 'Editor'
+                    : item.role === 'soporte'
+                      ? 'Soporte'
+                      : 'Cliente'
+
+              return {
+                id: item.id ?? item._id ?? index + 1,
+                name: item.name || 'Usuario Glowe',
+                email: item.email || 'usuario@glowe.com',
+                role: roleNormalized,
+                rawRole: item.role || 'user',
+                status: item.status || 'Activo',
+                lastLoginAt: item.lastLoginAt || null,
+                createdAt: item.createdAt || null,
+              }
+            }),
           )
         } else {
           setUsers([])
@@ -172,66 +204,58 @@ export function useAdminData() {
     }
   }, [])
 
-  const summary = useMemo(() => {
-    const todayKey = toDayKey(new Date())
-    return {
-      totalProducts: products.length,
-      revenue: purchases.reduce((sum, order) => sum + Number(order?.total || 0), 0),
-      todayOrders: purchases.filter((order) => toDayKey(order?.createdAt) === todayKey).length,
-      newCustomers: new Set(
-        purchases.map((order) => String(order?.customer || '').trim().toLowerCase()).filter(Boolean),
-      ).size,
-      lowStock: products.filter((item) => Number(item.stock || 0) < 10).length,
-      pending: purchases.filter((order) => String(order?.status || '').toLowerCase() !== 'completada').length,
-    }
-  }, [purchases, products])
+  const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()))
+  const [selectedMonth, setSelectedMonth] = useState('all')
 
-  const last7Days = useMemo(() => {
-    const days = []
-    const today = new Date()
-    for (let offset = 6; offset >= 0; offset -= 1) {
-      const day = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset)
-      const label = day.toLocaleDateString('es-CO', { weekday: 'short' })
-      days.push({
-        key: toDayKey(day),
-        label: label.charAt(0).toUpperCase() + label.slice(1),
-      })
-    }
-
-    const totalsByDay = new Map(days.map((day) => [day.key, 0]))
-    purchases.forEach((order) => {
-      const key = toDayKey(order?.createdAt)
-      if (totalsByDay.has(key)) {
-        totalsByDay.set(key, totalsByDay.get(key) + Number(order?.total || 0))
-      }
-    })
-
-    const max = Math.max(1, ...days.map((day) => totalsByDay.get(day.key)))
-    return {
-      total7d: days.reduce((sum, day) => sum + totalsByDay.get(day.key), 0),
-      values: days.map((day) => ({
-        ...day,
-        total: totalsByDay.get(day.key),
-        height: Math.round((totalsByDay.get(day.key) / max) * 100),
-      })),
-    }
-  }, [purchases])
+  const availableYears = useMemo(() => calculateAvailableYears(purchases), [purchases])
+  const filteredPurchases = useMemo(
+    () => filterPurchasesByPeriod(purchases, selectedYear, selectedMonth),
+    [purchases, selectedYear, selectedMonth],
+  )
+  const summary = useMemo(() => calculateDashboardSummary(filteredPurchases, products), [filteredPurchases, products])
+  const salesChartData = useMemo(() => calculateSalesChart(purchases, selectedYear, selectedMonth), [purchases, selectedYear, selectedMonth])
+  const last7Days = useMemo(() => calculateLast7DaysActivity(purchases), [purchases])
 
   const handleSearchChange = (moduleKey, value) => {
     setSearches((prev) => ({ ...prev, [moduleKey]: value }))
   }
 
-  const exportDashboard = () => {
+  const exportDashboard = async ({ startDate = '', endDate = '', format = 'pdf' } = {}) => {
+    let source = purchases
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : null
+      const end = endDate ? new Date(endDate) : null
+      if (end) end.setHours(23, 59, 59, 999)
+
+      source = purchases.filter((o) => {
+        const d = o.createdAt ? new Date(o.createdAt) : null
+        if (!d) return true
+        if (start && d < start) return false
+        if (end && d > end) return false
+        return true
+      })
+    }
+
+    const valid = source.filter((o) => String(o?.status || '').toLowerCase() !== 'anulada')
+    const rev = valid.reduce((sum, o) => sum + Number(o?.total || 0), 0)
+    const avg = valid.length > 0 ? Math.round(rev / valid.length) : 0
+
     const payload = [
-      { Metrica: 'Ventas totales', Valor: formatCOP(summary.revenue) },
-      { Metrica: 'Pedidos registrados', Valor: String(purchases.length) },
-      { Metrica: 'Pedidos hoy', Valor: String(summary.todayOrders) },
-      { Metrica: 'Clientes únicos', Valor: String(summary.newCustomers) },
-      { Metrica: 'Ventas últimos 7 días', Valor: formatCOP(last7Days.total7d) },
-      { Metrica: 'Productos en catálogo', Valor: String(summary.totalProducts) },
-      { Metrica: 'Stock crítico', Valor: String(summary.lowStock) },
+      { Metrica: 'Ventas período', Valor: formatCOP(rev) },
+      { Metrica: 'Pedidos registrados', Valor: String(source.length) },
+      { Metrica: 'Ticket promedio', Valor: formatCOP(avg) },
+      { Metrica: 'Filtro Año', Valor: selectedYear },
+      { Metrica: 'Filtro Mes', Valor: selectedMonth === 'all' ? 'Todos' : String(Number(selectedMonth) + 1) },
+      { Metrica: 'Fecha Desde', Valor: startDate || 'Inicio' },
+      { Metrica: 'Fecha Hasta', Valor: endDate || 'Hoy' },
     ]
-    exportToPdf({ title: 'reporte-dashboard', moduleTitle: 'Dashboard', payload })
+
+    await exportReport({
+      title: `reporte-dashboard-${selectedYear}`,
+      moduleTitle: 'Dashboard de Ventas',
+      payload,
+      format,
+    })
   }
 
   return {
@@ -243,6 +267,7 @@ export function useAdminData() {
     setUsers,
     purchases,
     setPurchases,
+    filteredPurchases,
     payments,
     setPayments,
     tags,
@@ -256,6 +281,12 @@ export function useAdminData() {
     handleSearchChange,
     summary,
     last7Days,
+    salesChartData,
+    selectedYear,
+    setSelectedYear,
+    selectedMonth,
+    setSelectedMonth,
+    availableYears,
     exportDashboard,
   }
 }

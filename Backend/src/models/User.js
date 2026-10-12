@@ -21,13 +21,21 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'admin', 'editor', 'soporte'],
       default: 'user',
     },
     status: {
       type: String,
-      enum: ['Activo', 'Bloqueado'],
+      enum: ['Activo', 'Bloqueado', 'Inactivo'],
       default: 'Activo',
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
+    favorites: {
+      type: [String],
+      default: [],
     },
   },
   {

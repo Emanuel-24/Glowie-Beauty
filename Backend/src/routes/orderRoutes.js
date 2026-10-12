@@ -6,12 +6,12 @@ import {
   updateOrder,
   deleteOrder,
 } from '../controllers/orderController.js';
-import { protect, requireAdmin } from '../middleware/auth.js';
+import { protect, requireAdmin, optionalProtect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.get('/', protect, requireAdmin, getOrders);
-router.post('/', protect, createOrder);
+router.get('/', protect, getOrders);
+router.post('/', optionalProtect, createOrder);
 router.put('/:id', protect, requireAdmin, updateOrder);
 router.patch('/:id', protect, requireAdmin, updateOrder);
 router.delete('/:id', protect, requireAdmin, deleteOrder);

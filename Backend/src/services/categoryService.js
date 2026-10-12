@@ -17,18 +17,26 @@ export const getAllCategories = async () => {
   const counts = await Product.aggregate([
     { $group: { _id: '$category', count: { $sum: 1 } } },
   ]);
-  const productCountMap = Object.fromEntries(
-    counts.map((entry) => [String(entry._id), Number(entry.count || 0)])
-  );
+  const productCountMap = {};
+  counts.forEach((entry) => {
+    const key = String(entry._id || '').toLowerCase().trim();
+    if (key) {
+      productCountMap[key] = Number(entry.count || 0);
+    }
+  });
 
-  return categories.map((category) =>
-    normalizeCategory(category, productCountMap[String(category.name)] ?? 0)
-  );
+  return categories.map((category) => {
+    const byName = productCountMap[String(category.name || '').toLowerCase().trim()];
+    const bySlug = productCountMap[String(category.slug || '').toLowerCase().trim()];
+    const byId = productCountMap[String(category._id || '').toLowerCase().trim()];
+    const count = byName ?? bySlug ?? byId ?? 0;
+    return normalizeCategory(category, count);
+  });
 };
 
 export const createCategoryRecord = async ({ name, description, status }) => {
   const trimmedName = String(name || '').trim();
-  const trimmedDesc = String(description || '').trim();
+  const trimmedDesc = description !== undefined && description !== null ? String(description).trim() : '';
   const trimmedStatus = String(status || 'Activa').trim();
 
   if (!trimmedName) {
@@ -37,7 +45,8 @@ export const createCategoryRecord = async ({ name, description, status }) => {
     throw error;
   }
 
-  const exists = await Category.findOne({ name: { $regex: `^${trimmedName}$`, $options: 'i' } }).lean();
+  const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const exists = await Category.findOne({ name: { $regex: `^${escapedName}$`, $options: 'i' } }).lean();
   if (exists) {
     const error = new Error('La categoría ya existe');
     error.statusCode = 409;
@@ -54,33 +63,75 @@ export const createCategoryRecord = async ({ name, description, status }) => {
 };
 
 export const updateCategoryRecord = async (id, payload = {}) => {
-  const category = await Category.findByIdAndUpdate(
-    id,
-    {
-      name: payload.name ? String(payload.name).trim() : undefined,
-      description: payload.description !== undefined ? String(payload.description).trim() : undefined,
-      status: payload.status ? String(payload.status).trim() : undefined,
-    },
-    { new: true, runValidators: true }
-  );
+  const category = await Category.findById(id);
 
   if (!category) {
     const error = new Error('Categoría no encontrada');
     error.statusCode = 404;
     throw error;
   }
+
+  if (payload.name) {
+    const nextName = String(payload.name).trim();
+    if (nextName.toLowerCase() !== category.name.toLowerCase()) {
+      const escapedName = nextName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const exists = await Category.findOne({
+        _id: { $ne: id },
+        name: { $regex: `^${escapedName}$`, $options: 'i' },
+      }).lean();
+      if (exists) {
+        const error = new Error('Ya existe otra categoría con ese nombre');
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+    category.name = nextName;
+    category.slug = ''; // triggers slug regeneration in pre-validate
+  }
+
+  if (payload.description !== undefined) {
+    category.description = payload.description ? String(payload.description).trim() : '';
+  }
+
+  if (payload.status) {
+    const nextStatus = String(payload.status).trim();
+    category.status = ['Activa', 'Pausada'].includes(nextStatus) ? nextStatus : 'Activa';
+  }
+
+  await category.save();
 
   return normalizeCategory(category, 0);
 };
 
 export const deleteCategoryRecord = async (id) => {
-  const category = await Category.findByIdAndDelete(id);
+  const category = await Category.findById(id);
 
   if (!category) {
     const error = new Error('Categoría no encontrada');
     error.statusCode = 404;
     throw error;
   }
+
+  // Validar si existen productos asociados (por nombre o slug)
+  const escapedName = category.name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const linkedProductsCount = await Product.countDocuments({
+    $or: [
+      { category: { $regex: `^${escapedName}$`, $options: 'i' } },
+      { category: category.slug },
+    ],
+  });
+
+  if (linkedProductsCount > 0) {
+    const error = new Error(
+      `No se puede eliminar porque tiene ${linkedProductsCount} ${
+        linkedProductsCount === 1 ? 'producto asociado' : 'productos asociados'
+      }`
+    );
+    error.statusCode = 400;
+    throw error;
+  }
+
+  await Category.findByIdAndDelete(id);
 
   return { id };
 };

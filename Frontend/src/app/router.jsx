@@ -24,7 +24,7 @@ const NotFoundPage = lazy(() => import('@/features/home/pages/NotFoundPage'))
 export function PageLoader() {
   return (
     <div
-      className="flex min-h-[60vh] items-center justify-center p-8"
+      className="flex min-h-[60vh] items-center justify-center p-8 animate-view-fade"
       role="status"
       aria-label="Cargando página"
     >

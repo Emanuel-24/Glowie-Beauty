@@ -15,20 +15,29 @@ export const sanitizeUser = (user) => ({
   email: user.email,
   role: user.role,
   status: user.status,
+  favorites: Array.isArray(user.favorites) ? user.favorites : [],
+  lastLoginAt: user.lastLoginAt || null,
+  createdAt: user.createdAt || null,
 });
 
-export const createToken = (user) => jwt.sign(
-  { id: user._id.toString(), email: user.email },
-  getJwtSecret(),
-  { expiresIn: '1h' },
-);
+export const createToken = (user, customExpiresIn) => {
+  const role = String(user.role || '').toLowerCase();
+  const isAdminOrStaff = ['admin', 'editor', 'soporte'].includes(role);
+  const expiresIn = customExpiresIn || (isAdminOrStaff ? '24h' : '60d');
+
+  return jwt.sign(
+    { id: user._id.toString(), email: user.email, role: user.role },
+    getJwtSecret(),
+    { expiresIn },
+  );
+};
 
 export const registerUser = async ({ name, email, password }) => {
   const normalizedEmail = String(email).trim().toLowerCase();
   const existingUser = await User.findOne({ email: normalizedEmail });
 
   if (existingUser) {
-    const error = new Error('El usuario ya existe');
+    const error = new Error('Este correo ya esta registrado.');
     error.statusCode = 400;
     throw error;
   }
@@ -38,6 +47,8 @@ export const registerUser = async ({ name, email, password }) => {
     email: normalizedEmail,
     password,
     role: 'user',
+    lastLoginAt: new Date(),
+    status: 'Activo',
   });
 
   return {
@@ -69,6 +80,13 @@ export const loginUser = async ({ email, password }) => {
     error.statusCode = 401;
     throw error;
   }
+
+  // Actualizar último acceso y reactivar a Activo si no estaba bloqueado
+  user.lastLoginAt = new Date();
+  if (user.status !== 'Bloqueado') {
+    user.status = 'Activo';
+  }
+  await user.save();
 
   return {
     user: sanitizeUser(user),

@@ -18,6 +18,8 @@ export const normalizeProduct = (product = {}) => {
     image,
     images: normalizedImages.length > 0 ? normalizedImages : image ? [image] : [],
     price: Number(product.price ?? 0),
+    costPrice: Number(product.costPrice ?? 0),
+    status: product.status || 'activo',
     oldPrice: product.oldPrice != null ? Number(product.oldPrice) : null,
     stock: Number(product.stock ?? 0),
     tags: Array.isArray(product.tags) ? product.tags : [],
@@ -66,10 +68,12 @@ export const createProductRecord = async (payload = {}) => {
     brand: String(payload.brand || 'Glowe Select').trim(),
     category: String(payload.category || 'maquillaje').trim() || 'maquillaje',
     price: Number(payload.price ?? 0),
+    costPrice: Number(payload.costPrice ?? 0),
+    status: ['activo', 'inactivo', 'anulado'].includes(payload.status) ? payload.status : 'activo',
     oldPrice: payload.oldPrice !== undefined && payload.oldPrice !== null ? Number(payload.oldPrice) : null,
     stock: Number(payload.stock ?? 12),
     image: String(payload.image || payload.images?.[0] || '').trim(),
-    images: Array.isArray(payload.images) ? payload.images.filter(Boolean).map(String) : [],
+    images: Array.isArray(payload.images) ? payload.images.filter(Boolean).map(String).slice(0, 3) : [],
     desc: String(payload.desc || payload.description || '').trim(),
     description: String(payload.description || payload.desc || '').trim(),
     tags: Array.isArray(payload.tags) ? payload.tags.map(String) : [],
@@ -115,6 +119,8 @@ export const updateProductRecord = async (id, payload = {}) => {
     brand: payload.brand !== undefined ? String(payload.brand).trim() : currentProduct.brand,
     category: payload.category ? String(payload.category).trim() : currentProduct.category,
     price: payload.price !== undefined ? Number(payload.price) : currentProduct.price,
+    costPrice: payload.costPrice !== undefined ? Number(payload.costPrice) : (currentProduct.costPrice ?? 0),
+    status: payload.status && ['activo', 'inactivo', 'anulado'].includes(payload.status) ? payload.status : currentProduct.status,
     oldPrice: payload.oldPrice !== undefined ? (payload.oldPrice === null ? null : Number(payload.oldPrice)) : currentProduct.oldPrice,
     stock: payload.stock !== undefined ? Number(payload.stock) : currentProduct.stock,
     image: payload.image !== undefined ? String(payload.image).trim() : currentProduct.image,
@@ -132,31 +138,30 @@ export const updateProductRecord = async (id, payload = {}) => {
     isFeaturedOffer: payload.isFeaturedOffer !== undefined ? Boolean(payload.isFeaturedOffer) : Boolean(currentProduct.isFeaturedOffer),
   };
 
-  if (Array.isArray(payload.images) && payload.images.length > 0) {
-    nextValues.images = payload.images.filter(Boolean).map(String);
-    if (!nextValues.image) nextValues.image = nextValues.images[0];
+  if (Array.isArray(payload.images)) {
+    nextValues.images = payload.images.filter(Boolean).map(String).slice(0, 3);
+    if (!nextValues.image && nextValues.images.length > 0) nextValues.image = nextValues.images[0];
   }
 
   const product = await Product.findByIdAndUpdate(id, nextValues, { new: true, runValidators: true });
   return normalizeProduct(product);
 };
 
-export const getActiveOffersRecord = async () => {
+export const getActiveOffersRecord = async ({ featuredOnly = false } = {}) => {
   const now = new Date();
-  const products = await Product.find({
+  const query = {
     $or: [
       { isOffer: true },
       { $and: [{ oldPrice: { $ne: null } }, { $expr: { $gt: ['$oldPrice', '$price'] } }] },
     ],
-  }).lean();
+  };
+  if (featuredOnly) query.isFeaturedOffer = true;
+  const products = await Product.find(query).lean();
 
-  const activeOffers = products.filter((product) => {
-    if (product.offerStartDate && new Date(product.offerStartDate) > now) {
-      return false;
-    }
-    if (product.offerEndDate && new Date(product.offerEndDate) < now) {
-      return false;
-    }
+  const activeOffers = products.filter((p) => {
+    if (featuredOnly && (!p.isFeaturedOffer || !p.offerEndDate || new Date(p.offerEndDate) <= now)) return false;
+    if (p.offerStartDate && new Date(p.offerStartDate) > now) return false;
+    if (p.offerEndDate && new Date(p.offerEndDate) < now) return false;
     return true;
   });
 
@@ -202,7 +207,7 @@ export const deleteProductRecord = async (id) => {
     throw error;
   }
 
-  const product = await Product.findByIdAndDelete(id);
+  const product = await Product.findById(id);
 
   if (!product) {
     const error = new Error('Producto no encontrado');
@@ -210,7 +215,23 @@ export const deleteProductRecord = async (id) => {
     throw error;
   }
 
-  return { id };
+  // Comprobar historial de ventas en Order
+  const Order = (await import('../models/Order.js')).default;
+  const salesCount = await Order.countDocuments({
+    'items.productId': id,
+  });
+
+  if (salesCount > 0) {
+    const error = new Error('No se puede anular un producto con historial de ventas');
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Anulación lógica controlada (Punto 9)
+  product.status = 'anulado';
+  await product.save();
+
+  return { id, status: 'anulado' };
 };
 
 export const getTopSellerProductRecord = async () => {

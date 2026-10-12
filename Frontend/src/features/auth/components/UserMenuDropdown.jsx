@@ -80,7 +80,7 @@ export default function UserMenuDropdown({
   const alignmentClass = align === 'left' ? 'left-0' : 'right-0'
 
   return (
-    <div className={`relative shrink-0 ${className}`} ref={menuRef}>
+    <div className={`relative shrink-0 ${open ? 'z-50' : 'z-20'} ${className}`} ref={menuRef}>
       {/* Botón Píldora para Tablet / PC (>= md) */}
       <button
         type="button"
@@ -121,7 +121,7 @@ export default function UserMenuDropdown({
         <div
           role="menu"
           aria-orientation="vertical"
-          className={`absolute ${alignmentClass} mt-2 w-56 rounded-2xl bg-white border border-glowe-pink/30 shadow-[0_12px_36px_rgba(101,73,107,0.18)] py-2 z-50 animate-[fadeIn_.15s_ease-out]`}
+          className={`absolute ${alignmentClass} mt-2 w-56 rounded-2xl bg-white border border-glowe-pink/30 shadow-[0_12px_36px_rgba(101,73,107,0.18)] py-2 z-[70] animate-[fadeIn_.15s_ease-out]`}
         >
           {/* Header del dropdown con datos del usuario */}
           <div className="px-4 py-2.5 border-b border-glowe-pink/20">

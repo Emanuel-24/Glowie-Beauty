@@ -131,7 +131,7 @@ export default function BundlesSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {bundles.map((bundle, index) => (
-            <Reveal key={bundle.id} delay={index * 80}>
+            <Reveal key={bundle.id} delay={index * 50}>
               <Card
                 radius="3xl"
                 className={`h-full p-5 ${bundle.border || 'border-glowe-pink/60'} flex flex-col justify-between`}

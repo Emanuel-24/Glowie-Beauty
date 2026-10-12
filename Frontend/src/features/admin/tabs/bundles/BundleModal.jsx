@@ -1,6 +1,7 @@
 import AdminModal from '@/features/admin/components/AdminModal'
 import Button from '@/shared/components/ui/Button'
 import Input from '@/shared/components/ui/Input'
+import ImageUploader from '@/features/admin/components/ImageUploader'
 
 export default function BundleModal({
   isOpen,
@@ -72,7 +73,7 @@ export default function BundleModal({
             />
           </div>
 
-          <div>
+          <div className="md:col-span-2">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Etiqueta / Badge
             </label>
@@ -84,15 +85,11 @@ export default function BundleModal({
             />
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
-              URL Imagen
-            </label>
-            <Input
+          <div className="md:col-span-2">
+            <ImageUploader
               value={bundleForm.image}
-              onChange={(e) => setBundleForm((prev) => ({ ...prev, image: e.target.value }))}
-              placeholder="https://..."
-              className="w-full"
+              onChange={(newImage) => setBundleForm((prev) => ({ ...prev, image: newImage }))}
+              label="Imagen del Combo / Kit"
             />
           </div>
 

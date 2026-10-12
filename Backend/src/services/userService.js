@@ -18,12 +18,14 @@ export const createUserRecord = async ({ name, email, password, role, status }) 
     throw error;
   }
 
+  const validRoles = ['admin', 'editor', 'soporte', 'user'];
   const user = await User.create({
     name: String(name).trim(),
     email: normalizedEmail,
     password,
-    role: role === 'admin' ? 'admin' : 'user',
+    role: validRoles.includes(role) ? role : 'user',
     status: status || 'Activo',
+    lastLoginAt: new Date(),
   });
 
   return sanitizeUser(user);
@@ -38,10 +40,33 @@ export const updateUserRecord = async (id, { name, email, password, role, status
     throw error;
   }
 
+  const isPrimaryAdmin = user.email.toLowerCase() === 'admin@glowe.com';
+
+  // Blindaje de seguridad para el Administrador principal
+  if (isPrimaryAdmin) {
+    if (role && role !== 'admin') {
+      const error = new Error('No se puede modificar ni degradar el rol del Administrador principal.');
+      error.statusCode = 403;
+      throw error;
+    }
+    if (status && status === 'Bloqueado') {
+      const error = new Error('No se puede bloquear la cuenta del Administrador principal.');
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
   if (name) user.name = String(name).trim();
-  if (email) user.email = String(email).trim().toLowerCase();
+  if (email && !isPrimaryAdmin) user.email = String(email).trim().toLowerCase();
   if (password) user.password = password;
-  if (role) user.role = role === 'admin' ? 'admin' : 'user';
+
+  if (role) {
+    const validRoles = ['admin', 'editor', 'soporte', 'user'];
+    if (validRoles.includes(role)) {
+      user.role = role;
+    }
+  }
+
   if (status) user.status = status;
 
   await user.save();
@@ -49,7 +74,7 @@ export const updateUserRecord = async (id, { name, email, password, role, status
 };
 
 export const deleteUserRecord = async (id) => {
-  const user = await User.findByIdAndDelete(id);
+  const user = await User.findById(id);
 
   if (!user) {
     const error = new Error('Usuario no encontrado');
@@ -57,5 +82,23 @@ export const deleteUserRecord = async (id) => {
     throw error;
   }
 
+  // Blindaje inmutable: El administrador principal no puede ser eliminado
+  if (user.email.toLowerCase() === 'admin@glowe.com') {
+    const error = new Error('El Administrador principal no puede ser eliminado físicamente de la base de datos.');
+    error.statusCode = 403;
+    throw error;
+  }
+
+  // No permitir eliminar el único administrador existente
+  if (user.role === 'admin') {
+    const adminCount = await User.countDocuments({ role: 'admin' });
+    if (adminCount <= 1) {
+      const error = new Error('No es posible eliminar al único Administrador disponible.');
+      error.statusCode = 403;
+      throw error;
+    }
+  }
+
+  await User.findByIdAndDelete(id);
   return { id };
 };

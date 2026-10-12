@@ -81,7 +81,8 @@ export const getTopSeller = async (req, res) => {
 
 export const getOffers = async (req, res) => {
   try {
-    const offers = await getActiveOffersRecord();
+    const featuredOnly = req.query?.featured === 'true';
+    const offers = await getActiveOffersRecord({ featuredOnly });
     return sendResponse(res, 200, true, offers, 'Listado de ofertas activas obtenido con éxito');
   } catch (error) {
     return sendResponse(res, 500, false, null, 'Error al consultar las ofertas activas');

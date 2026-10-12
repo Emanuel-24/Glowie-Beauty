@@ -26,13 +26,14 @@ export default function EditorialMakeup() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {editorialCategories.map((cat) => (
+          {editorialCategories.map((cat, idx) => (
             <button
               key={cat.name}
               onClick={() => handleClick(cat)}
-              className="cursor-pointer group glass-card rounded-2xl p-4 text-center flex flex-col items-center"
+              style={{ '--stagger-index': idx }}
+              className="stagger-item cursor-pointer group glass-card rounded-2xl p-4 text-center flex flex-col items-center"
             >
-              <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">{cat.icon}</span>
+              <span className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">{cat.icon}</span>
               <h3 className="font-bold text-xs text-glowe-dark">{cat.name}</h3>
               <span className="text-[10px] text-glowe-muted mt-1">{cat.sub}</span>
             </button>

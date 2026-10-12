@@ -23,6 +23,16 @@ const productSchema = new mongoose.Schema(
       min: 0,
       default: 0,
     },
+    costPrice: {
+      type: Number,
+      min: 0,
+      default: 0,
+    },
+    status: {
+      type: String,
+      enum: ['activo', 'inactivo', 'anulado'],
+      default: 'activo',
+    },
     oldPrice: {
       type: Number,
       min: 0,

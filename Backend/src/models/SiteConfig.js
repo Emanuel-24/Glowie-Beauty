@@ -59,22 +59,22 @@ const siteConfigSchema = new mongoose.Schema(
         {
           imageUrl: 'https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80',
           title: '@sofia_glowe',
-          link: 'https://instagram.com/GloweBeautyCO',
+          link: 'https://instagram.com/glowebeautytienda',
         },
         {
           imageUrl: 'https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=600&q=80',
           title: '@camila_beauty',
-          link: 'https://instagram.com/GloweBeautyCO',
+          link: 'https://instagram.com/glowebeautytienda',
         },
         {
           imageUrl: 'https://placehold.co/400x400/FDE2E4/FF758F?text=Glowe',
           title: '@valentina_hair',
-          link: 'https://instagram.com/GloweBeautyCO',
+          link: 'https://instagram.com/glowebeautytienda',
         },
         {
           imageUrl: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=600&q=80',
           title: '@mariana_style',
-          link: 'https://instagram.com/GloweBeautyCO',
+          link: 'https://instagram.com/glowebeautytienda',
         },
       ],
     },

@@ -2,11 +2,13 @@ import { useState, useMemo } from 'react'
 import DataTable from '@/features/admin/components/DataTable'
 import ActionButton from '@/features/admin/components/ActionButton'
 import StatusBadge from '@/features/admin/components/StatusBadge'
+import { useConfirm } from '@/shared/components/ui'
 import { createBundle, updateBundle, deleteBundle } from '@/features/promotions/services/bundleService'
 import { exportToExcel, exportToPdf } from '@/features/admin/services/reportService'
 import { formatCOP, emptyBundleForm } from '@/features/admin/constants'
 import { useToast } from '@/shared/toast'
 import BundleModal from './BundleModal'
+import BundleDetailModal from './BundleDetailModal'
 
 export default function BundlesTab({
   bundles = [],
@@ -16,11 +18,13 @@ export default function BundlesTab({
   onSearchChange,
 }) {
   const { showToast } = useToast()
+  const confirm = useConfirm()
   const [localSearch, setLocalSearch] = useState('')
   const [bundleModalOpen, setBundleModalOpen] = useState(false)
   const [editingBundleId, setEditingBundleId] = useState(null)
   const [bundleForm, setBundleForm] = useState(emptyBundleForm)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [detailBundle, setDetailBundle] = useState(null)
 
   const currentSearch = onSearchChange ? searchValue : localSearch
   const handleSearch = onSearchChange || setLocalSearch
@@ -181,19 +185,20 @@ export default function BundlesTab({
       render: (row) => (
         <div className="flex items-center gap-1.5">
           <ActionButton
+            type="view"
+            title="Ver detalle del combo"
+            onClick={() => setDetailBundle(row.rawBundle || row)}
+          />
+          <ActionButton
             type="edit"
             title="Editar combo"
             onClick={() => openBundleModal(row.rawBundle || row)}
-          >
-            Editar
-          </ActionButton>
+          />
           <ActionButton
             type="delete"
             title="Eliminar combo"
             onClick={() => handleDeleteBundle(row.rawId || row.id)}
-          >
-            Eliminar
-          </ActionButton>
+          />
         </div>
       ),
     },
@@ -238,6 +243,13 @@ export default function BundlesTab({
         products={products}
         onSubmit={handleBundleSubmit}
         isSubmitting={isSubmitting}
+      />
+
+      <BundleDetailModal
+        isOpen={Boolean(detailBundle)}
+        onClose={() => setDetailBundle(null)}
+        bundle={detailBundle}
+        products={products}
       />
     </>
   )

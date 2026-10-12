@@ -6,7 +6,7 @@ import { getOrderWhatsAppUrl } from '@/shared/utils/whatsapp'
 import { createOrder } from '@/features/orders/services/orderService'
 
 const generateOrderId = () =>
-  `GLOWE-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
+  `FAC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 
 export function useCheckout() {
   const { items, subtotal, shippingCost, total, clearCart } = useCart()
@@ -17,49 +17,48 @@ export function useCheckout() {
   const [error, setError] = useState(null)
 
   const processOrder = useCallback(
-    async ({ form, paymentMethod = 'efectivo' }) => {
+    async ({ form, paymentMethod = 'contra_entrega' }) => {
       setSubmitting(true)
       setError(null)
       try {
         const orderId = generateOrderId()
-        const customerName = form.fullName.trim() || 'cliente'
+        const customerName = form.fullName.trim() || user?.name || 'Cliente Glowe'
         const orderPayload = {
           orderId,
           items: items.map((item) => ({
             id: item.id,
+            productId: item.id,
             name: item.name,
+            title: item.name,
             image: item.image,
-            price: item.price,
-            qty: item.qty,
+            price: Number(item.price || 0),
+            qty: Number(item.qty || 1),
+            quantity: Number(item.qty || 1),
           })),
-          subtotal,
-          shippingCost,
-          total,
+          subtotal: Number(subtotal || 0),
+          shippingCost: Number(shippingCost || 0),
+          total: Number(total || 0),
           customer: {
             fullName: customerName,
+            cedula: form.cedula?.trim() || '',
             email: form.email.trim(),
             phone: form.phone.trim(),
             address: form.address.trim(),
             city: form.city.trim(),
             department: form.department?.trim() || '',
           },
+          shippingAddress: `${form.address.trim()}, ${form.city.trim()}`,
           paymentMethod,
+          notes: form.notes?.trim() || '',
           userId: user?.id ?? null,
         }
 
-        await createOrder(orderPayload)
-
-        const orderBrief = {
-          id: orderId,
-          createdAt: new Date().toISOString(),
-          total,
-          status: 'Confirmado',
-          items: items.map((item) => `${item.qty}x ${item.name}`),
-          customer: customerName,
-        }
+        const res = await createOrder(orderPayload)
+        const createdOrder = res?.data || {}
+        const finalInvoice = createdOrder.invoice || orderId
 
         const whatsappUrl = getOrderWhatsAppUrl({
-          orderId,
+          orderId: finalInvoice,
           customerName,
           items,
           total,
@@ -68,15 +67,36 @@ export function useCheckout() {
           city: form.city.trim(),
         })
 
-        addOrder(orderBrief)
+        const orderBrief = {
+          id: finalInvoice,
+          createdAt: new Date().toISOString(),
+          total,
+          status: 'Pendiente',
+          items: items.map((item) => `${item.qty}x ${item.name}`),
+          customer: customerName,
+        }
+
+        if (typeof addOrder === 'function') {
+          addOrder(orderBrief)
+        }
         clearCart()
-        const result = { id: orderId, customerName, whatsappUrl }
+
+        const result = {
+          id: finalInvoice,
+          customerName,
+          total,
+          date: new Date().toLocaleDateString('es-CO'),
+          paymentMethod,
+          whatsappUrl,
+          items,
+        }
         setSuccess(result)
+        showToast('¡Pedido recibido!', 'Tu compra ha sido registrada con éxito.', '✨')
         return result
       } catch (err) {
         const errMsg = err?.message || 'No pudimos procesar tu pedido. Revisa tus datos e inténtalo de nuevo.'
         setError(errMsg)
-        showToast('No pudimos procesar tu pedido', 'Revisa tus datos e inténtalo de nuevo.')
+        showToast('No pudimos procesar tu pedido', errMsg)
         throw err
       } finally {
         setSubmitting(false)

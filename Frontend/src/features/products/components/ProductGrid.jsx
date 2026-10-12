@@ -98,17 +98,23 @@ export default function ProductGrid({
   useEffect(() => {
     if (!sectionRef.current || filtered.length === 0) return undefined
 
+    // Si el usuario prefiere movimiento reducido, omitir animación GSAP
+    if (typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return undefined
+    }
+
     const ctx = gsap.context(() => {
       const cards = sectionRef.current.querySelectorAll('.product-card-animate')
       gsap.from(cards, {
-        y: 28,
+        y: 12,
         opacity: 0,
-        duration: 0.7,
-        stagger: 0.08,
-        ease: 'power3.out',
+        duration: 0.38,
+        stagger: 0.05,
+        ease: 'power2.out',
+        clearProps: 'transform,opacity',
         scrollTrigger: {
           trigger: sectionRef.current,
-          start: 'top 78%',
+          start: 'top 85%',
         },
       })
     }, sectionRef)
@@ -156,12 +162,13 @@ export default function ProductGrid({
               <div className="hide-scrollbar -mx-1 flex w-fit ml-auto items-center gap-1.5 overflow-x-auto rounded-full border border-white bg-white/60 p-1 shadow-sm sm:mx-0">
                 {categoryPills.map((pill) => (
                   <button
+                    type="button"
                     key={pill.value}
                     onClick={() => setCategory(pill.value)}
-                    className={`min-h-9 shrink-0 rounded-full px-4 py-1.5 text-xs transition-all ${
+                    className={`min-h-9 shrink-0 rounded-full px-4 py-1.5 text-xs transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent active:scale-95 ${
                       category === pill.value
                         ? 'bg-white shadow-sm text-glowe-dark font-bold'
-                        : 'font-semibold text-glowe-muted hover:text-glowe-dark'
+                        : 'font-semibold text-glowe-muted hover:text-glowe-dark hover:bg-white/50'
                     }`}
                   >
                     {pill.label}
@@ -181,9 +188,9 @@ export default function ProductGrid({
                 💄 Maquillaje: <span className="capitalize text-glowe-pink-accent">{effectiveMaquillaje}</span>
                 <button
                   type="button"
-                  onClick={onClearMaquillaje || onClearCuraduria || onClearTag}
+                  onClick={onClearMaquillaje || onClearCuraduria || onClearTag || (() => {})}
                   aria-label={`Eliminar filtro de Maquillaje ${effectiveMaquillaje}`}
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-pink-dark hover:text-white transition-colors cursor-pointer shadow-xs"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-pink-dark hover:text-white transition-colors cursor-pointer shadow-xs active:scale-95"
                 >
                   <X className="w-3 h-3"/>
                 </button>
@@ -194,9 +201,9 @@ export default function ProductGrid({
                 💇‍♀️ Cabello: <span className="capitalize text-glowe-blue-accent">{cabelloTag}</span>
                 <button
                   type="button"
-                  onClick={onClearCabello}
+                  onClick={onClearCabello || (() => {})}
                   aria-label={`Eliminar filtro de Cabello ${cabelloTag}`}
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs active:scale-95"
                 >
                   <X className="w-3 h-3"/>
                 </button>
@@ -207,9 +214,9 @@ export default function ProductGrid({
                 {glowFilter.icon || '✨'} <span>{glowFilter.label || glowFilter.tag}</span>
                 <button
                   type="button"
-                  onClick={onClearDescubrir || onResetFilter}
+                  onClick={onClearDescubrir || onResetFilter || (() => {})}
                   aria-label={`Eliminar filtro de descubrir ${glowFilter.label || glowFilter.tag}`}
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-blue-dark hover:text-white transition-colors cursor-pointer shadow-xs active:scale-95"
                 >
                   <X className="w-3 h-3"/>
                 </button>
@@ -220,9 +227,9 @@ export default function ProductGrid({
                 🔍 Búsqueda: <span className="text-amber-800">"{searchQuery}"</span>
                 <button
                   type="button"
-                  onClick={onClearSearch}
+                  onClick={onClearSearch || (() => {})}
                   aria-label="Limpiar término de búsqueda"
-                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-yellow-accent hover:text-white transition-colors cursor-pointer shadow-xs"
+                  className="ml-1 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white text-[10px] text-glowe-dark hover:bg-glowe-yellow-accent hover:text-white transition-colors cursor-pointer shadow-xs active:scale-95"
                 >
                   <X className="w-3 h-3"/>
                 </button>
@@ -230,8 +237,8 @@ export default function ProductGrid({
             )}
             <button
               type="button"
-              onClick={onResetFilter}
-              className="text-[11px] font-semibold text-glowe-pink-accent hover:underline ml-2"
+              onClick={onResetFilter || (() => {})}
+              className="text-[11px] font-semibold text-glowe-pink-accent hover:underline ml-2 cursor-pointer active:scale-95"
             >
               Limpiar todos
             </button>

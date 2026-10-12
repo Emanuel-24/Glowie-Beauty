@@ -130,6 +130,24 @@ Glowe Beauty/
   3. **Analítica Top-Seller:** Endpoint `GET /api/products/top-seller` que agrega ventas en órdenes con `status: "Completada"`. Fallback a `heroConfig.featuredProductId` o primer producto del catálogo.
   4. **Frontend dinámico:** `HeroSection.jsx` y `SocialProof.jsx` consumen la configuración en tiempo real con fallback resiliente.
 
+### ADR-015: Gobernanza, Pipeline de Multimedia y Estandarización del Panel Administrativo
+- **Fecha:** 11/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** El panel administrativo presentaba inconsistencias en modales (scrollbars visibles), selects nativos sin estilo Glowe, fallos de slugs en categorías/tags con acentos, carga de imágenes vía URLs de texto sin optimización y carencia de reglas de inactividad o blindaje para el administrador principal.
+- **Decisión:**
+  1. **Core de Formularios y Modales:** Utilidad `scrollbar-none` / `hide-scrollbar` en `AdminModal`, hook `useFormValidation` con validación reactiva en tiempo real y componente `Select.jsx` glassmorphism accesible.
+  2. **Catálogo y Pipeline Multimedia:** Schemas de `Category` y `Tag` con `description` formalmente opcional, slugs con normalización Unicode NFD para caracteres en español; utilidad `imageOptimizer.js` (Canvas WebP $\le 150$ KB) y componente `ImageUploader.jsx` con drag-and-drop y fallback a URL.
+  3. **Estandarización de Tablas y Búsqueda:** Alineación de acciones al extremo derecho (`text-right`, `justify-end`) en `DataTable`, `ProductsTab`, `CategoriesTab`, `TagsTab`, `OrdersTab` y `UsersTab`; filtrado universal insensible a mayúsculas, minúsculas y tildes con `stringUtils.js`.
+  4. **Gobernanza de Roles e Inactividad:** Campo `lastLoginAt` en modelo `User`, cálculo dinámico de inactividad de 45 días con subtexto de tiempo transcurrido en celda, reactivación automática a `Activo` en login, blindaje inmutable contra degradación/eliminación del administrador principal (`admin@glowe.com`) y módulo de consulta `RolesTab.jsx`.
+
+### ADR-016: Aislamiento Estricto de Favoritos y Auditoría de Clickeables en Staging
+- **Fecha:** 11/10/2026 · **Estado:** Aceptada e Implementada
+- **Contexto:** En el release de Staging se detectó que los favoritos de la sesión de un visitante anónimo podían contaminar la lista de deseos de una cuenta autenticada. Asimismo, el footer contenía enlaces vacíos `href="#"` sin feedback.
+- **Decisión:**
+  1. **Aislamiento de Favoritos:** Se implementó una política de aislamiento estricto (no-merge). Al iniciar sesión o registrarse, la sesión de cliente carga exclusivamente los favoritos guardados en su perfil de MongoDB (`user.favorites`).
+  2. **Limpieza de Almacenamiento Local:** Al completar el login o register, se purga de inmediato el `localStorage` temporal de favoritos anónimos (`glowe:favorites:v1`).
+  3. **Auditoría de Enlaces y UI:** Se erradicaron los `href="#"` del footer, reemplazándolos con el modal accesible `InfoLegalModal.jsx` (Preguntas Frecuentes, Políticas de Envío, Cambios y Devoluciones, Términos y Privacidad) con enlace directo a WhatsApp. Redes sociales estandarizadas con `target="_blank"` y `rel="noopener noreferrer"`.
+  4. **Feedback de Botones y Filtros:** Se integraron clases interactivas `cursor-pointer`, `active:scale-95` y fallbacks seguros a funciones no-op en los botones y filtros de catálogo y componentes atómicos (`Button.jsx`, `PillGroup.jsx`, `ProductGrid.jsx`), evitando errores de consola y navegación a rutas 404.
+
 ---
 
 ## 3. Estado de Módulos Clave
@@ -142,7 +160,7 @@ Glowe Beauty/
 | Categorías y Etiquetas | `categoryService`, `tagService`, `Admin.jsx` | `categoryRoutes`, `tagRoutes`, `Category`, `Tag` | ✅ | CRUD global de categorías y etiquetas en BD |
 | Configuración Tienda (CMS) | `siteConfigService`, `HeroSection`, `SocialProof`, `Admin.jsx` | `siteConfigRoutes`, `SiteConfig` | ✅ | Hero y Comunidad administrables en panel |
 | Carrito | `CartContext`, `CartDrawer`, `QuantityStepper` | — | 🟡 | Integrar Merge Strategy con localStorage al autenticar |
-| Favoritos | `FavoritesContext`, `FavoritesDrawer`, `Favoritos.jsx` | — | ✅ | Persistencia local activa |
+| Favoritos | `FavoritesContext`, `FavoritesPage`, `useFavorites` | `User` (`favorites: [String]`) | ✅ | Aislamiento estricto de sesión anónima (sin merge), persistencia en MongoDB y limpieza local en login |
 | Checkout / Pedidos | `Checkout.jsx`, `orderService` | `orderRoutes`, `orderController` → `orderService`, `Order` | 🟡 | Adaptar pasarela a mensaje formateado de WhatsApp (ADR-008) |
 | Pagos | `paymentService` | `paymentRoutes`, `paymentController` → `paymentService`, `Payment` | ✅ | Métodos `CONTRA_ENTREGA`, `TRANSFERENCIA`, `EFECTIVO`, `ABONOS` listos |
 | Combos y Ofertas | `Combos.jsx`, `Ofertas.jsx`, `BundlesSection` | `Product` (`type: COMBO`, `isFeaturedOffer`) | 🟡 | Conectar vistas frontend con campos del modelo |
@@ -335,15 +353,114 @@ Glowe Beauty/
 | Reestructuración Bloque 8B | ✅ Completada | 09/10/2026 | Conclusión de Fase 8: extracción de `OrdersTab`, `OffersTab` (con `OfferModal`, `GlowDealsBatchSection`, `OffersTable`, `OffersKpiCards`), `ProductsTab` (con `ProductModal`), `DashboardTab`, `AdminSidebar`, `AdminHeader`, `useAdminData`. Creación de `AdminPage.jsx` shell (146 líneas), barrel público `features/admin/index.js`, actualización de rutas en `App.jsx`, eliminación de `Frontend/src/pages/Admin.jsx` y purga total del directorio `src/pages/` |
 | Reestructuración Fase 9 | ✅ Completada | 09/10/2026 | App shell definitivo y Router con code-splitting: creación de `app/routes.js` (inmutable), migración de layout a `app/layout/` (`AppLayout.jsx`, `Header`, `Footer`, `MobileBottomNav`), orquestador `app/AppProviders.jsx`, enrutador `app/router.jsx` con 14 páginas en `lazy()`, montaje `app/main.jsx`, `index.html` actualizado. Eliminación definitiva de `src/App.jsx`, `src/main.jsx`, `src/services/api.js` y de las carpetas legacy `src/components/` y `src/services/`. Reducción del chunk principal a 297.59 kB (-76%) |
 | Reestructuración Fase 10 | ✅ Completada | 09/10/2026 | Endurecimiento y Cierre: ESLint con límites estrictos de capa (`shared` no importa de `features`/`app`, `features` no importa de `app`), CI GitHub Actions con verificación circular `madge --circular`, retiro definitivo de claves legacy de token en `tokenStorage.js` operando únicamente sobre `glowe:token:v1`, suite de pruebas unitarias para utilidades puras (`cartTotals`, `variants`, `whatsapp`) con 29 pruebas y 0 dependencias extra vía Node test runner, registro de ADR-0001 (`docs/adr/0001-feature-driven-frontend.md`) y cierre definitivo del Plan de Reestructuración al 100%. |
+| Optimización Dashboard Admin | ✅ Completada | 10/10/2026 | Modernización de KPIs ejecutivos con iconos vectoriales Lucide centrados en círculos perfectos, métricas reales de negocio (Ventas Totales, Pedidos Pendientes, Ticket Promedio, Productos Bajo Stock <= 5), badges honestos y adición de 3 gráficas analíticas modulares en `DashboardCharts.jsx` (Flujo de pedidos, Mix de catálogo por categoría y Canales de pago) respetando el límite <= 300 líneas. |
+| Admin Bugfixes & Multimedia | ✅ Completada | 11/10/2026 | Corrección de error 500 en creación de Categorías/Tags por middleware hook `pre('validate')` en Mongoose 9 (eliminación de `next()`), integración de `ImageUploader` WebP en Combos/Kits (`BundleModal`), e implementación de galería de hasta 3 imágenes máximo por producto (`ProductImageManager`, `ProductModal`, `ProductsTab`). |
+| Mejoras Fase 1 | ✅ Completada | 11/10/2026 | Componentes UI base: `ButtonLoading`, `ConfirmDialog` (`useConfirm`), `PriceInput`, `CustomDatePicker` |
+| Mejoras Fase 2 | ✅ Completada | 11/10/2026 | Dashboard analítico temporal: `DashboardTimeFilter` (Año/Mes), `SalesPerformanceChart`, `ExportReportModal` |
+| Mejoras Fase 3 | ✅ Completada | 11/10/2026 | Catálogo, Productos, Categorías y Tags: Fix de foco, auto-tagging, restricción de borrado, anulación protegida por ventas, precio coste, modales de detalle (ADR-024) |
+| Mejoras Fase 4 | ✅ Completada | 11/10/2026 | Ofertas Flash y Glow Deals: Reestructuración de OfferModal, acción Zap con redirección fluida, cupo máx 3 y filtro estricto de carrusel (ADR-025) |
 
 ---
 
-## 5. Deuda Técnica y Pendientes Previos al Despliegue
+### ADR-024: Fortalecimiento del Catálogo, Integridad Relacional y Ciclo de Vida de Productos
+- **Fecha:** 11/10/2026 · **Estado:** Aceptada e Implementada (Fase 3 del Plan de Mejoras)
+- **Contexto:** Se requería corregir la pérdida de foco en modales de categorías, prevenir la eliminación accidental de categorías y etiquetas con productos vinculados, incorporar trazabilidad de precio coste (`costPrice`), garantizar el ciclo de vida de productos con anulación lógica protegida contra historial de ventas, auto-crear etiquetas nuevas desde el formulario de producto y diseñar las modales de detalle para productos y combos.
+- **Decisión:**
+  1. **Solución del Bug de Pérdida de Foco en Categorías y Etiquetas:** Diagnóstico de causa raíz: la recreación continua de handlers de `useFormValidation` y la alternancia de contenedores de error en `Input.jsx` provocaba el desmontaje del nodo `<input>` en el DOM en cada tecla pulsada. Se sustituyó por estado local controlado directo con `Input` estabilizado.
+  2. **Creación Automática de Etiquetas Inexistentes (Punto 15):** En `ProductModal.jsx`, al ingresar una etiqueta no registrada en el catálogo, se invoca de inmediato `createTag({ name, description: '' })` en backend y se sincroniza reactivamente en el estado global `setTags`.
+  3. **Restricción de Borrado en Categorías y Etiquetas (Punto 8):** Bloqueo en frontend y backend (`categoryService.js` y `tagService.js`) que impide eliminar cualquier categoría o etiqueta que tenga al menos un producto asociado, notificando al usuario mediante `useConfirm` / toast.
+  4. **Ciclo de Vida de Productos y Anulación Protegida (Punto 9):**
+     - Desactivación rápida mediante switch `Activo`/`Inactivo` en la tabla de productos.
+     - Anulación lógica (`status = 'anulado'`) en lugar de borrado físico destructivo en MongoDB.
+     - Si el producto tiene al menos una orden registrada en el historial de ventas, el botón "Anular" se inhabilita con tooltip y advertencia: *"No se puede anular un producto con historial de ventas"*.
+  5. **Precio Coste y Margen (Punto 19):** Integración del campo `costPrice` (Number, default 0) en `Product.js`, normalizadores de backend y `PriceInput.jsx` en frontend, renombrando la columna principal a "Precio de venta".
+  6. **Modales de Detalle (Puntos 12 y 14):**
+     - `ProductDetailModal.jsx`: SKU, categoría, precio coste, precio de venta, cálculo automático del margen bruto (%), stock y ventas acumuladas.
+     - `BundleDetailModal.jsx`: desglose de productos incluidos, precio individual vs precio del combo y cálculo dinámico del ahorro total en COP.
+  7. **Cumplimiento de Límite $\le 300$ Líneas:** Extracción modular de `productColumns.jsx` (160 líneas), permitiendo que `ProductsTab.jsx` se mantenga en 290 líneas, `CategoriesTab.jsx` en 291 líneas y `TagsTab.jsx` en 260 líneas.
 
-### ✅ RESUELTO: Corrupción de Emojis de 4 bytes en URLs de WhatsApp
-- **Estado:** Resuelto en Fase 5 de la Reestructuración técnica (`Frontend/src/shared/utils/whatsapp.js`).
-- **Implementación:**
-  1. Uso del endpoint canónico directo `https://api.whatsapp.com/send/?phone=<cleanPhone>&text=<encodedText>` saltando el proxy con fallo de UTF-8 de `wa.me`.
-  2. Secuencias Unicode explícitas y normalización `normalize('NFC')` antes del encoding, con preservación validada en los tests del Backend y build de Frontend.
+---
+
+### ADR-025: Reestructuración de Ofertas Flash, Acción Directa Zap y Lógica Estricta de Glow Deals
+- **Fecha:** 11/10/2026 · **Estado:** Aceptada e Implementada (Fase 4 del Plan de Mejoras)
+- **Contexto:** Se requería reestructurar la experiencia de creación/edición de ofertas, conectar la acción directa de oferta con icono `Zap` desde la tabla de productos con redirección automática hacia la pestaña de ofertas, validar el límite estricto de 3 productos destacados en Glow Deals y erradicar la fuga donde ofertas regulares se colaban indebidamente en el carrusel principal.
+- **Decisión:**
+  1. **Reestructuración de `OfferModal.jsx` (Punto 20):** Orden lógico rediseñado con:
+     - Título dinámico ("Crear Oferta Flash" / "Editar Oferta").
+     - Mini buscador reactivo de productos (`OfferProductSelector.jsx`) con filtro en tiempo real por nombre/SKU.
+     - Tarjeta compacta del producto seleccionado con miniatura, SKU, marca y precio de referencia.
+     - Toggle interactivo de activación de oferta.
+     - Cálculo bidireccional reactivo entre precio de referencia, `% Descuento` y `Precio de oferta` utilizando `PriceInput.jsx`.
+     - Fechas de vigencia con `CustomDatePicker.jsx` (inicio opcional y límite obligatoria si la oferta está activa).
+     - Switch de carrusel Glow Deals con validación de cupo (máximo 3 productos). Si ya hay 3 destacados y el producto no es uno de ellos, se inhabilita con mensaje de advertencia visible.
+     - Botón "Guardar oferta ⚡" con `ButtonLoading` para protección contra doble envío.
+  2. **Acción `Zap` en Catálogo de Productos y Redirección Fluida (Punto 21):**
+     - En `productColumns.jsx`, se sustituyó el botón de texto por un botón icon-only con `Zap` de `lucide-react` estilizado con tooltip accesible "Crear/Gestionar oferta".
+     - Al hacer clic en el rayo, abre inmediatamente `OfferModal` con el producto preseleccionado.
+     - Al guardar la oferta exitosamente, actualiza el estado reactivo del catálogo y redirige automáticamente la vista activa del panel a la pestaña de "Ofertas y descuentos" (`setActiveTab('offers')`).
+  3. **Lógica Estricta de Glow Deals (Punto 23):**
+     - Se eliminó el fallback que devolvía ofertas regulares cuando no había destacados (`offers.slice(0, 3)` en `bundleService.js`).
+     - Para figurar en Glow Deals se exige rigurosamente: `isFeaturedOffer: true` Y fecha límite configurada y futura (`new Date(offerEndDate) > now`).
+     - La regla se aplica tanto en backend (`getActiveOffersRecord({ featuredOnly: true })` en `productService.js`) como en el frontend (`bundleService.js` y `GlowDeals.jsx`).
+  4. **Modularidad y Límites:** Extracción de `OfferProductSelector.jsx` (107 líneas) para mantener `OfferModal.jsx` en 291 líneas ($\le 300$), 0 dependencias circulares verificadas con Madge.
+
+### ADR-0013: Flujo de Checkout Público sin Bloqueo de Invitados, Métodos Unificados y Bifurcación Pedidos vs Ventas
+- **Fecha:** 11/10/2026
+- **Contexto:** En el checkout público, la confirmación de pedidos arrojaba el error *"No pudimos procesar tu pedido. Revisa tus datos e inténtalo de nuevo"*. La ruta `POST /orders` exigía obligatoriamente token JWT en backend (`protect`), `Order.js` requería `userId` de forma mandatoria impidiendo compras de invitados (guest checkout), y el esquema Mongoose rechazaba la estructura de `items` enviada por el carrito (`productId` vs `id`, `title` vs `name`). Adicionalmente, el panel administrativo agrupaba confusamente las compras sin separar los pedidos web recién entrantes de las ventas aprobadas.
+- **Decisiones y Cambios Implementados:**
+  1. **Reparación del Checkout Público y Guest Checkout (Punto 24):**
+     - Se implementó el middleware `optionalProtect` en backend (`orderRoutes.js` y `auth.js`), permitiendo compras tanto para usuarios logueados (enlazando su cuenta) como para compras como invitado (sin requerir token ni fallar con 401).
+     - Se actualizó el esquema Mongoose de `Order` (`Order.js`): `userId` ya no es `required`, `orderItemSchema` admite identificadores flexibles (`Mixed`), y se añadieron campos completos para cliente (`customerCedula`, `customerPhone`, `customerEmail`, `customerCity`, `customerDepartment`, `paymentMethod`, `notes`, `subtotal`, `shippingCost`).
+     - Normalización resiliente en `orderService.js` y `orderController.js` para mapear tanto payloads de objetos de cliente como formatos tradicionales.
+  2. **Unificación de Métodos de Pago a 3 Opciones Estándar:**
+     - 1: Efectivo / Transferencia contra entrega (`contra_entrega`).
+     - 2: Abono / Crédito (`abono`) con mensaje visual destacado: *"El valor o porcentaje a abonar para separar tu orden se coordinará directamente por WhatsApp con nuestro equipo"*.
+     - 3: Transferencia pago completo (`transferencia_completa`).
+     - Integración y etiquetas sincronizadas en el generador de mensajes de WhatsApp (`shared/utils/whatsapp.js`).
+  3. **Pantalla de Éxito y WhatsApp Directo (`CheckoutSuccess.jsx`):**
+     - Al responder 201 el backend, se limpia el carrito (`clearCart()`) y se presenta la pantalla visual "¡Pedido Recibido! ✨".
+     - Tarjeta con código de orden (`#FAC-XXXX`), fecha y total formateado en COP.
+     - Botón principal de acción grande *"Enviar pedido a WhatsApp"* con icono de WhatsApp/MessageCircle y redirección en nueva pestaña con el mensaje formateado.
+  4. **Bifurcación Administrativa: Pestaña "Pedidos" vs Pestaña "Ventas" (Puntos 10 y 24):**
+     - **Pestaña "Pedidos" (`IncomingOrdersTab.jsx`):** Muestra exclusivamente órdenes en estado `Pendiente` con badge dinámico en la barra lateral (`AdminSidebar.jsx`). Permite ver detalle completo del cliente/productos con botón de contacto por WhatsApp, confirmar pedido (transfiriéndolo reactivamente a "Ventas" con `useConfirm`) y anular pedido.
+     - **Pestaña "Ventas" (`OrdersTab.jsx`):** Historial consolidado de ventas aprobadas/facturadas (`status !== 'Pendiente'`) con filtros de estado (Todas, Confirmadas, Completadas, Anuladas) y exportación a Excel y PDF.
+### ADR-026: Gobernanza de Usuarios, Sesiones Diferenciadas, Comunidad Glowe y Consistencia de Badges
+- **Fecha:** 11/10/2026
+- **Contexto:** Fase final del plan de mejoras integrales (Fase 6). Se requería completar la gestión de usuarios administrativos con modal reactiva y autogeneración de correos, eliminar acciones obsoletas de bloqueo, proteger al administrador principal, diferenciar las políticas de caducidad de JWT por rol (24h para admin/staff vs 60d para clientes), habilitar la edición y carga de imágenes WebP en Comunidad Glowe, activar las notificaciones de pedidos entrantes en la cabecera y asegurar que ningún badge de estado o stock carezca de texto explícito y legible.
+- **Decisiones y Cambios Implementados:**
+  1. **Consistencia de Badges de Estado y Stock (Punto 7):**
+     - En `StatusBadge.jsx`, soporte unificado de `children`, `label` y `status` con fallback visual permanente (`displayLabel = children ?? label ?? status ?? 'Activo'`).
+     - En `productColumns.jsx`, se incorporó la columna dedicada `Stock` con badges accesibles y textos explícitos (`✓ {qty} unid.` o `⚠ Agotado`).
+  2. **Gobernanza de Usuarios y Modal de Creación (`CreateUserModal.jsx`) (Punto 25):**
+     - Eliminación definitiva del botón "Bloquear acceso" en `UsersTab.jsx`.
+     - Blindaje del root admin (`admin@glowe.com` / `isPrimaryAdmin`): no puede ser eliminado, degradado ni alterado.
+     - Modal interactiva `CreateUserModal.jsx` con autogeneración reactiva de correo `nombre.apellido@glowe.com` (minúsculas, sin tildes ni caracteres especiales, editable), detección de emails duplicados en tiempo real, selector de rol y contraseña visible/ocultable.
+  3. **Vigencia Diferenciada de Sesiones JWT (Punto 13):**
+     - En `Backend/src/services/authService.js`, `createToken` diferencia el rol: `admin`, `editor`, `soporte` reciben token estricto con `expiresIn: '24h'`; usuarios y clientes reciben `expiresIn: '60d'` para preservar carritos y listas de deseos sin cierres imprevistos.
+  4. **Comunidad Glowe: Edición y Carga de Archivos WebP (`CommunityPostModal.jsx`) (Punto 26):**
+     - Modal reutilizable de edición y creación con previsualización en vivo.
+     - Admisión de URL directa o carga de archivo local desde el dispositivo con compresión instantánea a WebP mediante `optimizeImage.js` (&le; 150 KB).
+     - Botones de acción directa (editar y eliminar) en cada tarjeta de la sección.
+  5. **Notificaciones en Cabecera (`NotificationDropdown.jsx`) (Punto 27):**
+     - Activación del botón de campana en `AdminHeader.jsx` conectado reactivamente a los pedidos entrantes pendientes.
+     - Popover glassmorphism con resumen de órdenes, acceso directo con un clic a la pestaña "Pedidos" y opción "Marcar todas como leídas".
+  6. **Prevención de Pérdida de Datos (`useUnsavedChangesWarning.js`) (Punto 28):**
+     - Hook reutilizable acoplado al evento `beforeunload` del navegador para proteger modales y formularios abiertos con cambios sin guardar (`ProductModal`, `OfferModal`, `CreateUserModal`, `CommunityPostModal`).
+  7. **Modularidad y Límites:** Todos los archivos creados y editados se mantienen estrictamente en $\le 300$ líneas (`UsersTab.jsx` en 265, `CreateUserModal.jsx` en 218, `SiteConfigTab.jsx` en 222, `CommunityPostModal.jsx` en 196, `NotificationDropdown.jsx` en 163, `AdminHeader.jsx` en 84). Cero dependencias circulares con Madge.
+### ADR-027: Ajustes Críticos en Administración, Tienda Web, Resiembra y Verificación E2E
+- **Fecha:** 11/10/2026
+- **Contexto:** Paquete de optimizaciones y correcciones funcionales en el panel administrativo y la tienda web de Glowe Beauty:
+  1. Nueva modal de edición de ventas (`EditSaleModal.jsx`) que permite agregar o retirar productos del catálogo con recálculo de subtotales, totales y envíos, sección interactiva de tracking y diálogo de liquidación de saldo pendiente con `useConfirm` al marcar la venta como "Completada".
+  2. Botón de acción rápida con icono de tarjeta (`CreditCard`) en la tabla de Ventas (`OrdersTab.jsx`) para registrar abonos directamente en `RegisterPaymentModal.jsx`.
+  3. Visualización de instrucciones especiales de entrega en `OrderDetailModal.jsx` y remoción del tracking de dicha vista de solo lectura.
+  4. Aislamiento estricto de pedidos en `ProfilePage.jsx` y `orderService.js` (solo pedidos propios del usuario autenticado) y redirección automática inmediata de usuarios con rol `admin` hacia `/admin`.
+  5. Visualización explícita de dirección completa de entrega (`MapPin`) y método de pago (`CreditCard`) en `OrderCard.jsx`.
+  6. Reemplazo del KPI "Ticket Promedio" por "Ganancia Estimada" en `DashboardTab.jsx` y `adminMetrics.js`: $\sum_{\text{ventas}} [ \sum_{\text{items}} (\text{precioVenta} - \text{precioCoste}) \times \text{cantidad} + \text{envío} ]$.
+  7. Eliminación de columna redundante "Confirmar" en `IncomingOrdersTab.jsx` y presentación explícita de la columna "Envío" (`shippingCost`) en Pedidos y Ventas.
+  8. Estandarización de selectores con bordes `rounded-xl`, acabado glassmorphism y flecha personalizada `ChevronDown`.
+  9. Regla de abono mínimo de $1.000 COP en `RegisterPaymentModal.jsx` permitiendo cualquier monto intermedio hasta el saldo pendiente.
+  10. Resiembra limpia de colecciones operacionales (`seed.js`) preservando al Root Admin (`admin@glowe.com` / `admin123`) con imágenes locales de `docs/imgsProducts/` (`Frontend/public/imgsProducts/`).
+  11. Ejecución y validación E2E completa con Playwright CLI (`e2e/admin.spec.js`, `e2e/store.spec.js`), superando 8 de 8 pruebas de extremo a extremo sin errores.
+- **Límites y Calidad:** Todos los componentes se mantuvieron en $\le 300$ líneas (`EditSaleModal.jsx`: 293, `OrdersTab.jsx`: 296, `IncomingOrdersTab.jsx`: 281, `useAdminData.js`: 292, `ProfilePage.jsx`: 272, etc.). Cero dependencias circulares verificadas con Madge.
 
 

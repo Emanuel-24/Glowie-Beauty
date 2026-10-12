@@ -56,6 +56,9 @@ export const formatOrderWhatsAppMessage = ({
 }) => {
   const formattedTotal = total != null ? `$${Number(total).toLocaleString('es-CO')} COP` : ''
   const paymentLabels = {
+    contra_entrega: 'Efectivo / Transferencia contra entrega 💵',
+    abono: 'Abono / Crédito (a coordinar) 📝',
+    transferencia_completa: 'Transferencia pago completo 🏦',
     efectivo: 'Efectivo contra entrega 💵',
     tarjeta: 'Tarjeta débito / crédito 💳',
     nequi: 'Nequi / Daviplata 📱',

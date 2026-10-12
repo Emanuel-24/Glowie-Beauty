@@ -11,10 +11,11 @@ import {
   ChevronRight,
 } from 'lucide-react'
 import { useAuth } from '@/features/auth'
-import { getOrders } from '@/features/orders'
+import { getUserOrders } from '@/features/orders'
 import { useToast } from '@/shared/toast'
 import { usePageMeta } from '@/shared/hooks/usePageMeta'
 import { ROUTES } from '@/shared/config/routes'
+import MosaicLens from '@/features/auth/components/MosaicLens'
 import OrderCard from '@/features/account/components/OrderCard'
 import ProfileForm from '@/features/account/components/ProfileForm'
 
@@ -36,15 +37,22 @@ export default function ProfilePage() {
   const [fetchedOrders, setFetchedOrders] = useState([])
   const [loadingOrders, setLoadingOrders] = useState(true)
 
-  // Sincronizar pedidos de la API y del contexto
+  // Redirigir administradores automáticamente al panel administrativo
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      navigate('/admin', { replace: true })
+    }
+  }, [user, navigate])
+
+  // Carga estricta y sincronizada de pedidos del usuario autenticado
   useEffect(() => {
     let isMounted = true
-
     async function loadUserOrders() {
+      if (!user) return
       try {
         setLoadingOrders(true)
-        const apiData = await getOrders()
-        if (isMounted && Array.isArray(apiData) && apiData.length > 0) {
+        const apiData = await getUserOrders(user)
+        if (isMounted && Array.isArray(apiData)) {
           setFetchedOrders(apiData)
         }
       } catch {
@@ -55,48 +63,34 @@ export default function ProfilePage() {
     }
 
     loadUserOrders()
-    return () => {
-      isMounted = false
-    }
-  }, [])
+    return () => { isMounted = false }
+  }, [user])
 
-  // Consolidar lista de órdenes
+  // Aislamiento estricto: Solo pedidos del usuario autenticado (userId o customerEmail)
   const allOrders = useMemo(() => {
-    if (fetchedOrders.length > 0) return fetchedOrders
-    if (Array.isArray(contextOrders) && contextOrders.length > 0) return contextOrders
-    return []
-  }, [fetchedOrders, contextOrders])
+    if (!user) return []
+    const sourceList = fetchedOrders.length > 0 ? fetchedOrders : (Array.isArray(contextOrders) ? contextOrders : [])
+    const uId = String(user._id || user.id || '')
+    const uEmail = (user.email || '').trim().toLowerCase()
 
-  // Filtrado reactivo de pedidos
+    return sourceList.filter((ord) => {
+      const ordUserId = String(ord.userId?._id || ord.userId || '')
+      const ordEmail = (ord.customerEmail || '').trim().toLowerCase()
+      const matchId = Boolean(uId && ordUserId && ordUserId === uId)
+      const matchEmail = Boolean(uEmail && ordEmail && ordEmail === uEmail)
+      return matchId || matchEmail
+    })
+  }, [fetchedOrders, contextOrders, user])
+
+  // Filtrado reactivo de pedidos por pestaña
   const visibleOrders = useMemo(() => {
     return allOrders.filter((order) => {
       if (filter === 'Todos') return true
-      const statusLower = String(order.status || '').toLowerCase()
-
-      if (filter === 'Pendientes') {
-        return statusLower.includes('pend') || statusLower.includes('cread')
-      }
-      if (filter === 'En preparación') {
-        return (
-          statusLower.includes('prepar') ||
-          statusLower.includes('proceso') ||
-          statusLower.includes('paid')
-        )
-      }
-      if (filter === 'En camino') {
-        return (
-          statusLower.includes('camino') ||
-          statusLower.includes('enviad') ||
-          statusLower.includes('shipped')
-        )
-      }
-      if (filter === 'Entregados') {
-        return (
-          statusLower.includes('entreg') ||
-          statusLower.includes('comple') ||
-          statusLower.includes('delivered')
-        )
-      }
+      const st = String(order.status || '').toLowerCase()
+      if (filter === 'Pendientes') return st.includes('pend') || st.includes('cread')
+      if (filter === 'En preparación') return st.includes('prepar') || st.includes('proceso') || st.includes('paid')
+      if (filter === 'En camino') return st.includes('camino') || st.includes('enviad') || st.includes('shipped')
+      if (filter === 'Entregados') return st.includes('entreg') || st.includes('comple') || st.includes('delivered')
       return true
     })
   }, [allOrders, filter])
@@ -107,31 +101,30 @@ export default function ProfilePage() {
     navigate(ROUTES.HOME, { replace: true })
   }
 
-  const handleSaveProfile = async (formData) => {
+  const handleSaveProfile = async () => {
     showToast('Perfil actualizado', 'Tus datos de entrega han sido guardados.')
   }
 
-  // Iniciales del usuario para el avatar
   const userInitials = useMemo(() => {
-    const name = user?.name || 'Cliente'
-    const parts = name.trim().split(' ')
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
-    }
-    return (name.slice(0, 2) || 'GL').toUpperCase()
+    const parts = (user?.name || 'Cliente').trim().split(' ')
+    return parts.length >= 2 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : (user?.name?.slice(0, 2) || 'GL').toUpperCase()
   }, [user?.name])
 
   return (
     <div className="min-h-screen bg-[#FAF8F5] px-4 py-8 text-[#2D2A2E] sm:px-6 sm:py-10 lg:px-8">
       <div className="mx-auto max-w-6xl">
         {/* Banner de Bienvenida Glow */}
-        <section className="relative overflow-hidden rounded-[1.75rem] bg-[#FDE2E4] px-6 py-7 sm:px-9 sm:py-8">
+        <section className="relative overflow-hidden rounded-[1.75rem] border border-white/60 bg-[#FDE2E4] px-6 py-7 shadow-xs sm:px-9 sm:py-8">
+          <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+            <MosaicLens background="#FFD1E1" color1="#8DE2F7" color2="#FFE7A3" />
+          </div>
+
           <div className="relative z-10 max-w-xl">
-            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-white/75 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#b94d68]">
+            <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/60 bg-transparent bg-white/50 px-3 py-1.5 text-[11px] font-semibold tracking-wide text-[#b94d68] shadow-xs backdrop-blur-xs">
               <Sparkles className="size-3.5" aria-hidden="true" />
               Cliente verificada · Miembro Glow
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+            <h1 className="text-2xl font-semibold tracking-tight text-glowe-dark sm:text-3xl">
               ¡Hola, {user?.name || 'Glower'}! <span aria-hidden="true">✦</span>
             </h1>
             <p className="mt-2 text-sm leading-6 text-[#735d61] sm:text-base">
@@ -147,29 +140,16 @@ export default function ProfilePage() {
 
         {/* Selector de Pestañas Móvil */}
         <div className="mt-6 flex gap-2 overflow-x-auto rounded-2xl bg-white p-1.5 shadow-sm md:hidden">
-          <button
-            type="button"
-            onClick={() => setTab('orders')}
-            className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-              tab === 'orders' ? 'bg-[#2D2A2E] text-white' : 'text-[#78716C] hover:bg-[#FAF8F5]'
-            }`}
-          >
+          <button type="button" onClick={() => setTab('orders')} className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition ${tab === 'orders' ? 'bg-[#2D2A2E] text-white' : 'text-[#78716C] hover:bg-[#FAF8F5]'}`}>
             Mis Pedidos ({allOrders.length})
           </button>
-          <button
-            type="button"
-            onClick={() => setTab('details')}
-            className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition ${
-              tab === 'details' ? 'bg-[#2D2A2E] text-white' : 'text-[#78716C] hover:bg-[#FAF8F5]'
-            }`}
-          >
+          <button type="button" onClick={() => setTab('details')} className={`flex-1 whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-medium transition ${tab === 'details' ? 'bg-[#2D2A2E] text-white' : 'text-[#78716C] hover:bg-[#FAF8F5]'}`}>
             Mis Datos
           </button>
         </div>
 
         {/* Layout Principal: Sidebar y Contenido */}
         <div className="mt-6 grid gap-6 md:grid-cols-[260px_1fr] lg:grid-cols-[280px_1fr]">
-          {/* Sidebar de Escritorio */}
           <aside className="hidden md:block md:sticky md:top-24 md:self-start">
             <div className="rounded-3xl border border-[#f2dfe1] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-3 border-b border-[#f3e9e7] pb-5">
@@ -187,46 +167,17 @@ export default function ProfilePage() {
               </div>
 
               <nav className="flex flex-col gap-1 py-5" aria-label="Cuenta">
-                <button
-                  type="button"
-                  onClick={() => setTab('orders')}
-                  className={`flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-medium transition ${
-                    tab === 'orders'
-                      ? 'bg-[#FDE2E4] text-[#b94d68]'
-                      : 'text-[#78716C] hover:bg-[#FAF8F5]'
-                  }`}
-                >
-                  <span className="flex items-center gap-3">
-                    <Package className="size-4" aria-hidden="true" /> Mis Pedidos
-                  </span>
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[11px] ${
-                      tab === 'orders' ? 'bg-white' : 'bg-[#FAF8F5]'
-                    }`}
-                  >
-                    {allOrders.length}
-                  </span>
+                <button type="button" onClick={() => setTab('orders')} className={`flex items-center justify-between rounded-xl px-3 py-3 text-left text-sm font-medium transition ${tab === 'orders' ? 'bg-[#FDE2E4] text-[#b94d68]' : 'text-[#78716C] hover:bg-[#FAF8F5]'}`}>
+                  <span className="flex items-center gap-3"><Package className="size-4" aria-hidden="true" /> Mis Pedidos</span>
+                  <span className={`rounded-full px-2 py-0.5 text-[11px] ${tab === 'orders' ? 'bg-white' : 'bg-[#FAF8F5]'}`}>{allOrders.length}</span>
                 </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTab('details')}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${
-                    tab === 'details'
-                      ? 'bg-[#FDE2E4] text-[#b94d68]'
-                      : 'text-[#78716C] hover:bg-[#FAF8F5]'
-                  }`}
-                >
+                <button type="button" onClick={() => setTab('details')} className={`flex items-center gap-3 rounded-xl px-3 py-3 text-left text-sm font-medium transition ${tab === 'details' ? 'bg-[#FDE2E4] text-[#b94d68]' : 'text-[#78716C] hover:bg-[#FAF8F5]'}`}>
                   <UserRound className="size-4" aria-hidden="true" /> Mis Datos
                 </button>
               </nav>
 
               <div className="border-t border-[#f3e9e7] pt-4">
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-[#78716C] transition hover:bg-rose-50 hover:text-rose-600"
-                >
+                <button type="button" onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-sm text-[#78716C] transition hover:bg-rose-50 hover:text-rose-600">
                   <LogOut className="size-4" aria-hidden="true" /> Cerrar sesión
                 </button>
               </div>
@@ -278,13 +229,18 @@ export default function ProfilePage() {
 
                 {/* Listado de Pedidos */}
                 <div className="mt-5 flex flex-col gap-4">
-                  {visibleOrders.map((order) => (
-                    <OrderCard
+                  {visibleOrders.map((order, idx) => (
+                    <div
                       key={order.id || order._id}
-                      order={order}
-                      customerName={user?.name}
-                      onReorder={() => navigate(ROUTES.MAKEUP)}
-                    />
+                      style={{ '--stagger-index': Math.min(idx, 8) }}
+                      className="stagger-item"
+                    >
+                      <OrderCard
+                        order={order}
+                        customerName={user?.name}
+                        onReorder={() => navigate(ROUTES.MAKEUP)}
+                      />
+                    </div>
                   ))}
                 </div>
 

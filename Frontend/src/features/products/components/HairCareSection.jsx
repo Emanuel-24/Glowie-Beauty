@@ -27,13 +27,14 @@ export default function HairCareSection() {
           </div>
 
           <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-4">
-            {hairCards.map((card) => (
+            {hairCards.map((card, idx) => (
               <button
                 key={card.name}
                 onClick={() => navigate(`/descubrir?cabello=${encodeURIComponent(card.name)}`)}
-                className="glass-card p-4 rounded-2xl text-center border-glowe-blue hover:bg-white hover:border-glowe-blue-dark hover:shadow-glowe-blue transition-all cursor-pointer"
+                style={{ '--stagger-index': idx }}
+                className="stagger-item glass-card p-4 rounded-2xl text-center border-glowe-blue hover:bg-white hover:border-glowe-blue-dark hover:shadow-glowe-blue transition-all cursor-pointer"
               >
-                <div className="w-12 h-12 mx-auto rounded-full bg-glowe-blue flex items-center justify-center text-xl mb-2">
+                <div className="w-12 h-12 mx-auto rounded-full bg-glowe-blue flex items-center justify-center text-xl mb-2 transition-transform duration-300 hover:scale-110">
                   {card.icon}
                 </div>
                 <h3 className="font-bold text-xs text-glowe-dark">{card.name}</h3>

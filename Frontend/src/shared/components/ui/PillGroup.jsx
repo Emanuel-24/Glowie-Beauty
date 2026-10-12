@@ -19,11 +19,12 @@ export default function PillGroup({
         const active = pill.value === activeValue
         return (
           <button
+            type="button"
             key={pill.value}
             onClick={() => onChange(pill.value)}
             aria-pressed={active}
             aria-current={active ? 'true' : undefined}
-            className={`min-h-10 px-4 py-1.5 rounded-full text-xs font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 ${
+            className={`min-h-10 px-4 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:opacity-50 ${
               active
                 ? pill.activeClass || defaultActive
                 : pill.inactiveClass || defaultInactive

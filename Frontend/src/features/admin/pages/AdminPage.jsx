@@ -14,24 +14,31 @@ import SiteConfigTab from '@/features/admin/tabs/site-config/SiteConfigTab'
 import CategoriesTab from '@/features/admin/tabs/categories/CategoriesTab'
 import TagsTab from '@/features/admin/tabs/tags/TagsTab'
 import UsersTab from '@/features/admin/tabs/users/UsersTab'
+import RolesTab from '@/features/admin/tabs/roles/RolesTab'
 import PaymentsTab from '@/features/admin/tabs/payments/PaymentsTab'
 import ProductsTab from '@/features/admin/tabs/products/ProductsTab'
 import OrdersTab from '@/features/admin/tabs/orders/OrdersTab'
+import IncomingOrdersTab from '@/features/admin/tabs/orders/IncomingOrdersTab'
 import OffersTab from '@/features/admin/tabs/offers/OffersTab'
 import BundlesTab from '@/features/admin/tabs/bundles/BundlesTab'
+import ExportReportModal from '@/features/admin/components/ExportReportModal'
+import DashboardTimeFilter from '@/features/admin/tabs/dashboard/DashboardTimeFilter'
+import OfferModal from '@/features/admin/tabs/offers/OfferModal'
 
 gsap.registerPlugin(ScrollTrigger)
 
 const moduleTitles = {
   dashboard: 'Dashboard',
+  incomingOrders: 'Pedidos',
+  orders: 'Ventas',
   categories: 'Categoría de productos',
   tags: 'Etiquetas / Tags',
   products: 'Productos',
   bundles: 'Combos y Kits',
   siteConfig: 'Configuración Web',
-  orders: 'Compras',
   payments: 'Pagos y abonos',
   users: 'Usuarios',
+  roles: 'Roles y Permisos',
   offers: 'Ofertas y Descuentos',
 }
 
@@ -72,6 +79,21 @@ export default function AdminPage() {
     )
   }
 
+  const [exportModalOpen, setExportModalOpen] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
+  const [offerModalOpen, setOfferModalOpen] = useState(false)
+  const [selectedOfferProduct, setSelectedOfferProduct] = useState(null)
+  const [offerSource, setOfferSource] = useState('')
+
+  const handleExecuteExport = async ({ startDate, endDate, format }) => {
+    setIsExporting(true)
+    try {
+      await adminData.exportDashboard({ startDate, endDate, format })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   const renderModuleContent = () => {
     if (!adminData.moduleReady) {
       return (
@@ -90,28 +112,53 @@ export default function AdminPage() {
           <DashboardTab
             user={user}
             summary={adminData.summary}
-            last7Days={adminData.last7Days}
+            salesChartData={adminData.salesChartData}
             purchases={adminData.purchases}
-            onExport={adminData.exportDashboard}
+            filteredPurchases={adminData.filteredPurchases}
+            products={adminData.products}
+            categories={adminData.categories}
+            payments={adminData.payments}
+            selectedYear={adminData.selectedYear}
+            selectedMonth={adminData.selectedMonth}
             onViewAllOrders={() => setActiveModule('orders')}
           />
         )
       case 'siteConfig':
         return <SiteConfigTab siteConfigData={adminData.siteConfigData} setSiteConfigData={adminData.setSiteConfigData} products={adminData.products} />
       case 'categories':
-        return <CategoriesTab categories={adminData.categories} setCategories={adminData.setCategories} searchValue={adminData.searches.categories} onSearchChange={(v) => adminData.handleSearchChange('categories', v)} />
+        return <CategoriesTab categories={adminData.categories} setCategories={adminData.setCategories} products={adminData.products} searchValue={adminData.searches.categories} onSearchChange={(v) => adminData.handleSearchChange('categories', v)} />
       case 'tags':
-        return <TagsTab tags={adminData.tags} setTags={adminData.setTags} searchValue={adminData.searches.tags} onSearchChange={(v) => adminData.handleSearchChange('tags', v)} />
+        return <TagsTab tags={adminData.tags} setTags={adminData.setTags} products={adminData.products} searchValue={adminData.searches.tags} onSearchChange={(v) => adminData.handleSearchChange('tags', v)} />
       case 'users':
         return <UsersTab users={adminData.users} setUsers={adminData.setUsers} searchValue={adminData.searches.users} onSearchChange={(v) => adminData.handleSearchChange('users', v)} />
+      case 'roles':
+        return <RolesTab users={adminData.users} />
       case 'payments':
-        return <PaymentsTab payments={adminData.payments} setPayments={adminData.setPayments} purchases={adminData.purchases} searchValue={adminData.searches.payments} onSearchChange={(v) => adminData.handleSearchChange('payments', v)} />
+        return <PaymentsTab payments={adminData.payments} setPayments={adminData.setPayments} purchases={adminData.purchases} setPurchases={adminData.setPurchases} searchValue={adminData.searches.payments} onSearchChange={(v) => adminData.handleSearchChange('payments', v)} />
       case 'products':
-        return <ProductsTab products={adminData.products} setProducts={adminData.setProducts} tags={adminData.tags} searchValue={adminData.searches.products} onSearchChange={(v) => adminData.handleSearchChange('products', v)} onConfigureOffer={() => setActiveModule('offers')} />
+        return (
+          <ProductsTab
+            products={adminData.products}
+            setProducts={adminData.setProducts}
+            categories={adminData.categories}
+            tags={adminData.tags}
+            setTags={adminData.setTags}
+            purchases={adminData.purchases}
+            searchValue={adminData.searches.products}
+            onSearchChange={(v) => adminData.handleSearchChange('products', v)}
+            onConfigureOffer={(product) => {
+              setSelectedOfferProduct(product)
+              setOfferSource('products')
+              setOfferModalOpen(true)
+            }}
+          />
+        )
       case 'bundles':
         return <BundlesTab bundles={adminData.bundles} setBundles={adminData.setBundles} products={adminData.products} searchValue={adminData.searches.bundles} onSearchChange={(v) => adminData.handleSearchChange('bundles', v)} />
+      case 'incomingOrders':
+        return <IncomingOrdersTab purchases={adminData.purchases} setPurchases={adminData.setPurchases} searchValue={adminData.searches.incomingOrders} onSearchChange={(v) => adminData.handleSearchChange('incomingOrders', v)} />
       case 'orders':
-        return <OrdersTab purchases={adminData.purchases} setPurchases={adminData.setPurchases} searchValue={adminData.searches.orders} onSearchChange={(v) => adminData.handleSearchChange('orders', v)} />
+        return <OrdersTab purchases={adminData.purchases} setPurchases={adminData.setPurchases} payments={adminData.payments} setPayments={adminData.setPayments} products={adminData.products} searchValue={adminData.searches.orders} onSearchChange={(v) => adminData.handleSearchChange('orders', v)} />
       case 'offers':
         return <OffersTab products={adminData.products} setProducts={adminData.setProducts} searchValue={adminData.searches.offers} onSearchChange={(v) => adminData.handleSearchChange('offers', v)} />
       default:
@@ -120,7 +167,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div ref={panelRef} className="relative z-10 px-3 py-4 sm:px-4 sm:py-6 md:px-8 md:py-8">
+    <div ref={panelRef} className="relative z-10 px-3 py-3 sm:px-4 sm:py-6 md:px-8 md:py-3">
       {/* Botón Volver a la tienda por fuera del contenedor principal */}
       <div className="mx-auto max-w-7xl mb-3">
         <button
@@ -147,17 +194,68 @@ export default function AdminPage() {
           />
           <section className="flex-1 bg-[radial-gradient(circle_at_top_left,_rgba(255,176,201,0.16),transparent_32%),radial-gradient(circle_at_bottom_right,_rgba(140,229,247,0.14),transparent_35%)]">
             <AdminHeader
+              activeModule={activeModule}
               moduleTitle={moduleTitles[activeModule]}
               onOpenMobileMenu={() => setMobileMenuOpen(true)}
               user={user}
+              timeFilter={
+                activeModule === 'dashboard' ? (
+                  <DashboardTimeFilter
+                    selectedYear={adminData.selectedYear}
+                    onYearChange={adminData.setSelectedYear}
+                    selectedMonth={adminData.selectedMonth}
+                    onMonthChange={adminData.setSelectedMonth}
+                    availableYears={adminData.availableYears}
+                  />
+                ) : null
+              }
+              onExport={activeModule === 'dashboard' ? () => setExportModalOpen(true) : undefined}
               showAccountMenu={showAccountMenu}
               setShowAccountMenu={setShowAccountMenu}
               onLogout={() => { logout(); navigate('/login', { replace: true }); }}
+              pendingOrders={adminData.purchases.filter((p) => (p.status || 'Pendiente') === 'Pendiente')}
+              onSelectOrder={() => setActiveModule('incomingOrders')}
+              onNavigateToOrders={() => setActiveModule('incomingOrders')}
             />
             <div className="space-y-6 px-4 py-6 md:px-6 md:py-8">{renderModuleContent()}</div>
           </section>
         </div>
       </div>
+
+      <ExportReportModal
+        isOpen={exportModalOpen}
+        onClose={() => setExportModalOpen(false)}
+        onExport={handleExecuteExport}
+        isExporting={isExporting}
+        title="Exportar Reporte de Ventas"
+        subtitle={`Datos analíticos • Año ${adminData.selectedYear}`}
+      />
+
+      <OfferModal
+        isOpen={offerModalOpen}
+        onClose={() => {
+          setOfferModalOpen(false)
+          setSelectedOfferProduct(null)
+          setOfferSource('')
+        }}
+        initialProduct={selectedOfferProduct}
+        lockProductSelection={offerSource === 'products'}
+        source={offerSource}
+        products={adminData.products}
+        onSaveSuccess={(savedProduct) => {
+          adminData.setProducts?.((prev) =>
+            prev.map((item) =>
+              String(item.id ?? item._id) === String(savedProduct.id ?? savedProduct._id)
+                ? { ...item, ...savedProduct }
+                : item
+            )
+          )
+          setOfferModalOpen(false)
+          setSelectedOfferProduct(null)
+          setOfferSource('')
+          setActiveModule('offers')
+        }}
+      />
     </div>
   )
 }

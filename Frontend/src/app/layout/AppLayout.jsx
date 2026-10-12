@@ -42,7 +42,9 @@ export default function AppLayout() {
       {!isAdminArea && <Header />}
 
       <main id="contenido-principal" className={`relative ${isAdminArea ? '' : 'pb-0 xl:pb-0'}`}>
-        <Outlet />
+        <div key={pathname} className="animate-view-fade">
+          <Outlet />
+        </div>
       </main>
 
       {!isAdminArea && <Footer />}

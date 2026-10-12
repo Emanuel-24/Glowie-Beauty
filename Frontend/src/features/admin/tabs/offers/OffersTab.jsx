@@ -2,7 +2,6 @@ import { useState } from 'react'
 import Button from '@/shared/components/ui/Button'
 import Input from '@/shared/components/ui/Input'
 import { updateProduct } from '@/features/products/services/productService'
-import { emptyOfferForm } from '@/features/admin/constants'
 import { useToast } from '@/shared/toast'
 import GlowDealsBatchSection from './GlowDealsBatchSection'
 import OffersKpiCards from './OffersKpiCards'
@@ -19,8 +18,6 @@ export default function OffersTab({
   const [offerFilter, setOfferFilter] = useState('all')
   const [offerModalOpen, setOfferModalOpen] = useState(false)
   const [editingOfferProduct, setEditingOfferProduct] = useState(null)
-  const [offerForm, setOfferForm] = useState(emptyOfferForm)
-  const [isSavingOffer, setIsSavingOffer] = useState(false)
 
   const activeOffersCount = products.filter((p) => p.isOffer).length
   const featuredOffersCount = products.filter((p) => p.isOffer && p.isFeaturedOffer).length
@@ -46,50 +43,23 @@ export default function OffersTab({
     return true
   })
 
-  const openOfferModal = (product) => {
-    const regular = product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price
-    const offer = product.isOffer ? product.price : Math.round(regular * 0.8)
-    const discount = product.discountPercentage || Math.round(((regular - offer) / regular) * 100) || 20
-
+  const openOfferModal = (product = null) => {
     setEditingOfferProduct(product)
-    setOfferForm({
-      productId: product.id,
-      name: product.name,
-      brand: product.brand || 'Glowe Select',
-      image: product.image,
-      isOffer: Boolean(product.isOffer),
-      oldPrice: String(regular),
-      price: String(offer),
-      discountPercentage: String(discount),
-      offerStartDate: product.offerStartDate ? String(product.offerStartDate).split('T')[0] : '',
-      offerEndDate: product.offerEndDate ? String(product.offerEndDate).split('T')[0] : '',
-      isFeaturedOffer: Boolean(product.isFeaturedOffer),
-    })
     setOfferModalOpen(true)
-  }
-
-  const handleOfferPriceChange = (field, val) => {
-    setOfferForm((prev) => {
-      const next = { ...prev, [field]: val }
-      const reg = Number(field === 'oldPrice' ? val : prev.oldPrice) || 0
-
-      if (field === 'discountPercentage') {
-        const pct = Math.min(100, Math.max(0, Number(val) || 0))
-        if (reg > 0) {
-          next.price = String(Math.round(reg * (1 - pct / 100)))
-        }
-      } else if (field === 'price' || field === 'oldPrice') {
-        const off = Number(field === 'price' ? val : prev.price) || 0
-        if (reg > 0 && off > 0 && reg >= off) {
-          next.discountPercentage = String(Math.round(((reg - off) / reg) * 100))
-        }
-      }
-      return next
-    })
   }
 
   const handleToggleOffer = async (product) => {
     const newOfferStatus = !product.isOffer
+
+    if (newOfferStatus) {
+      const hasValidEndDate = product.offerEndDate && new Date(product.offerEndDate) > new Date()
+      if (!hasValidEndDate) {
+        showToast('Fecha límite requerida', 'Debes configurar una fecha límite antes de activar la oferta', '⚠️')
+        openOfferModal(product)
+        return
+      }
+    }
+
     const regularPrice = product.oldPrice && product.oldPrice > product.price ? product.oldPrice : product.price
     const offerPrice = newOfferStatus
       ? product.oldPrice && product.oldPrice > product.price
@@ -110,7 +80,7 @@ export default function OffersTab({
     try {
       const saved = await updateProduct(product.id, updatedPayload)
       setProducts?.((prev) =>
-        prev.map((item) => ((item.id ?? item._id) === product.id ? { ...item, ...saved, ...updatedPayload } : item)),
+        prev.map((item) => (String(item.id ?? item._id) === String(product.id) ? { ...item, ...saved, ...updatedPayload } : item)),
       )
       showToast(
         newOfferStatus ? '¡Oferta activada! ⚡' : 'Oferta pausada',
@@ -122,62 +92,18 @@ export default function OffersTab({
     }
   }
 
-  const handleSaveOffer = async (e) => {
-    if (e) e.preventDefault()
-    if (!editingOfferProduct) return
-
-    setIsSavingOffer(true)
-    const regularPrice = Number(offerForm.oldPrice) || editingOfferProduct.price
-    const offerPrice = Number(offerForm.price) || Math.round(regularPrice * 0.8)
-    const discountPct = Number(offerForm.discountPercentage) || 0
-
-    const payload = {
-      isOffer: Boolean(offerForm.isOffer),
-      oldPrice: Boolean(offerForm.isOffer) ? regularPrice : null,
-      price: Boolean(offerForm.isOffer) ? offerPrice : regularPrice,
-      discountPercentage: Boolean(offerForm.isOffer) ? discountPct : 0,
-      offerStartDate: offerForm.offerStartDate ? new Date(offerForm.offerStartDate).toISOString() : null,
-      offerEndDate: offerForm.offerEndDate ? new Date(offerForm.offerEndDate).toISOString() : null,
-      isFeaturedOffer: Boolean(offerForm.isFeaturedOffer),
-    }
-
-    try {
-      const saved = await updateProduct(editingOfferProduct.id, payload)
-      setProducts?.((prev) =>
-        prev.map((item) =>
-          (item.id ?? item._id) === editingOfferProduct.id ? { ...item, ...saved, ...payload } : item,
-        ),
-      )
-      setOfferModalOpen(false)
-      showToast('Oferta guardada ⚡', `Promoción para ${editingOfferProduct.name} actualizada correctamente.`, '✨')
-    } catch {
-      showToast('Error', 'No se pudo guardar la configuración de oferta.', '❌')
-    } finally {
-      setIsSavingOffer(false)
-    }
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Top action bar */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-600">
-            Promociones y Descuentos Flash
-          </p>
-          <h1 className="font-serif text-2xl font-bold text-glowe-dark sm:text-3xl">Gestión de Ofertas ⚡</h1>
-          <p className="text-xs text-glowe-muted">
-            Administra descuentos, porcentajes, vigencia y las ofertas destacadas para el escaparate público.
-          </p>
-        </div>
+        <p className="text-xs text-glowe-muted">
+          Administra descuentos, porcentajes, vigencia y las ofertas destacadas para el escaparate público.
+        </p>
         <div className="flex items-center gap-2">
           <Button
             variant="gradient"
             size="sm"
-            onClick={() => {
-              const firstWithoutOffer = products.find((p) => !p.isOffer) || products[0]
-              if (firstWithoutOffer) openOfferModal(firstWithoutOffer)
-            }}
+            onClick={() => openOfferModal(null)}
             className="shadow-sm"
           >
             ⚡ Configurar Nueva Oferta
@@ -243,12 +169,23 @@ export default function OffersTab({
       {/* Modal de edición */}
       <OfferModal
         isOpen={offerModalOpen}
-        onClose={() => setOfferModalOpen(false)}
-        offerForm={offerForm}
-        setOfferForm={setOfferForm}
-        onPriceChange={handleOfferPriceChange}
-        onSave={handleSaveOffer}
-        isSaving={isSavingOffer}
+        onClose={() => {
+          setOfferModalOpen(false)
+          setEditingOfferProduct(null)
+        }}
+        initialProduct={editingOfferProduct}
+        products={products}
+        onSaveSuccess={(savedProduct) => {
+          setProducts?.((prev) =>
+            prev.map((item) =>
+              (item.id ?? item._id) === (savedProduct.id ?? savedProduct._id)
+                ? { ...item, ...savedProduct }
+                : item
+            )
+          )
+          setOfferModalOpen(false)
+          setEditingOfferProduct(null)
+        }}
       />
     </div>
   )

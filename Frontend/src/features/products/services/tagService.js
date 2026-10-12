@@ -38,6 +38,21 @@ export async function createTag(input = {}) {
   return normalizeTag(payload)
 }
 
+export async function updateTag(id, input = {}) {
+  const body = {
+    name: input.name ? String(input.name).trim() : undefined,
+    description: input.description !== undefined ? String(input.description).trim() : undefined,
+  }
+
+  const response = await apiRequest(`/tags/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+
+  const payload = response?.data ?? response ?? null
+  return payload ? normalizeTag(payload) : null
+}
+
 export async function deleteTag(id) {
   await apiRequest(`/tags/${id}`, { method: 'DELETE' })
   return { ok: true }

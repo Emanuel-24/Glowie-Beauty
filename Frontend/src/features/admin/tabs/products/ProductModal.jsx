@@ -1,6 +1,7 @@
 import AdminModal from '@/features/admin/components/AdminModal'
-import Button from '@/shared/components/ui/Button'
-import Input from '@/shared/components/ui/Input'
+import { Button, Input, PriceInput, Select } from '@/shared/components/ui'
+import ProductImageManager from '@/features/admin/components/ProductImageManager'
+import { useUnsavedChangesWarning } from '@/shared/hooks/useUnsavedChangesWarning'
 
 export default function ProductModal({
   isOpen,
@@ -8,9 +9,37 @@ export default function ProductModal({
   isEditing,
   productForm,
   setProductForm,
+  categories = [],
   tags = [],
+  onAddNewTag,
   onSubmit,
 }) {
+  useUnsavedChangesWarning(Boolean(isOpen && productForm.name))
+  const categoryOptions =
+    categories.length > 0
+      ? categories.map((cat) => ({
+          value: cat.name.toLowerCase(),
+          label: cat.name,
+        }))
+      : [
+          { value: 'maquillaje', label: 'Maquillaje' },
+          { value: 'cabello', label: 'Cabello' },
+          { value: 'skincare', label: 'Skincare' },
+          { value: 'labios', label: 'Labios' },
+        ]
+
+  const handleAddCustomTag = async (rawVal) => {
+    const val = rawVal?.trim()
+    if (!val) return
+    if (!(productForm.tags || []).some((item) => item.toLowerCase() === val.toLowerCase())) {
+      setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), val] }))
+      // Creación automática en BD si no existe en la lista de tags
+      if (onAddNewTag) {
+        await onAddNewTag(val)
+      }
+    }
+  }
+
   return (
     <AdminModal
       isOpen={isOpen}
@@ -19,6 +48,7 @@ export default function ProductModal({
     >
       <form onSubmit={onSubmit} className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2">
+          {/* Nombre */}
           <div className="md:col-span-2">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Nombre
@@ -29,8 +59,11 @@ export default function ProductModal({
               onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
               placeholder="Nombre del producto"
               className="w-full"
+              required
             />
           </div>
+
+          {/* Marca */}
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Marca
@@ -43,45 +76,46 @@ export default function ProductModal({
               className="w-full"
             />
           </div>
+
+          {/* Categoría */}
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Categoría
             </label>
-            <select
+            <Select
               value={productForm.category}
               onChange={(event) => setProductForm((prev) => ({ ...prev, category: event.target.value }))}
-              className="glass-input h-11 rounded-full px-4"
-            >
-              <option value="maquillaje">Maquillaje</option>
-              <option value="cabello">Cabello</option>
-              <option value="skincare">Skincare</option>
-              <option value="labios">Labios</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
-              Badge
-            </label>
-            <Input
-              value={productForm.badge}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, badge: event.target.value }))}
-              placeholder="Nuevo"
-              className="w-full"
+              options={categoryOptions}
             />
           </div>
+
+          {/* Precio de venta (COP) */}
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
-              Precio
+              Precio de venta (COP)
             </label>
-            <Input
-              type="number"
-              min="0"
+            <PriceInput
               value={productForm.price}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, price: event.target.value }))}
-              placeholder="38000"
-              className="w-full"
+              onChange={(e) => setProductForm((prev) => ({ ...prev, price: e.numericValue }))}
+              placeholder="0"
+              className="w-full text-xs font-semibold"
             />
           </div>
+
+          {/* Precio coste (COP) */}
+          <div>
+            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
+              Precio coste (COP)
+            </label>
+            <PriceInput
+              value={productForm.costPrice}
+              onChange={(e) => setProductForm((prev) => ({ ...prev, costPrice: e.numericValue }))}
+              placeholder="0"
+              className="w-full text-xs"
+            />
+          </div>
+
+          {/* Stock */}
           <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Stock
@@ -94,17 +128,36 @@ export default function ProductModal({
               className="w-full"
             />
           </div>
-          <div className="md:col-span-2">
+
+          {/* Badge */}
+          <div>
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
-              Imagen
+              Badge / Etiqueta destacada
             </label>
             <Input
-              value={productForm.image}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, image: event.target.value }))}
-              placeholder="URL de la imagen"
+              value={productForm.badge}
+              onChange={(event) => setProductForm((prev) => ({ ...prev, badge: event.target.value }))}
+              placeholder="Nuevo"
               className="w-full"
             />
           </div>
+
+          {/* Gestor de Imágenes */}
+          <div className="md:col-span-2">
+            <ProductImageManager
+              images={productForm.images || []}
+              primaryImage={productForm.image || ''}
+              onChange={({ images, primaryImage }) =>
+                setProductForm((prev) => ({
+                  ...prev,
+                  images,
+                  image: primaryImage,
+                }))
+              }
+            />
+          </div>
+
+          {/* Etiquetas / Tags con Creación Automática */}
           <div className="md:col-span-2 rounded-[1.2rem] border border-white/80 bg-white/70 p-3.5 space-y-2.5">
             <label className="block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Etiquetas / Tags del Producto (ej: Ojos, Rostro, Labios, Look Natural)
@@ -134,6 +187,7 @@ export default function ProductModal({
                 <span className="text-xs text-glowe-muted italic">Sin etiquetas asignadas.</span>
               )}
             </div>
+
             {tags.length > 0 && (
               <div className="pt-1">
                 <p className="text-[10px] font-semibold uppercase text-glowe-muted mb-1">Tags disponibles para agregar:</p>
@@ -145,7 +199,7 @@ export default function ProductModal({
                         key={tg.id || tg.name}
                         type="button"
                         onClick={() => setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), tg.name] }))}
-                        className="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-medium text-glowe-dark hover:bg-pink-50"
+                        className="rounded-full border border-pink-200 bg-white/80 px-2 py-0.5 text-[11px] font-medium text-glowe-dark hover:bg-pink-50 cursor-pointer"
                       >
                         + {tg.name}
                       </button>
@@ -153,19 +207,17 @@ export default function ProductModal({
                 </div>
               </div>
             )}
+
             <div className="flex items-center gap-2 pt-1">
               <Input
                 id="new-tag-input"
-                placeholder="Escribir etiqueta y presionar añadir..."
+                placeholder="Escribir nueva etiqueta..."
                 className="flex-1 text-xs py-1.5"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault()
-                    const val = e.target.value.trim()
-                    if (val && !(productForm.tags || []).some((item) => item.toLowerCase() === val.toLowerCase())) {
-                      setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), val] }))
-                      e.target.value = ''
-                    }
+                    handleAddCustomTag(e.target.value)
+                    e.target.value = ''
                   }
                 }}
               />
@@ -175,17 +227,18 @@ export default function ProductModal({
                 variant="glass"
                 onClick={() => {
                   const input = document.getElementById('new-tag-input')
-                  const val = input?.value?.trim()
-                  if (val && !(productForm.tags || []).some((item) => item.toLowerCase() === val.toLowerCase())) {
-                    setProductForm((prev) => ({ ...prev, tags: [...(prev.tags || []), val] }))
-                    if (input) input.value = ''
+                  if (input?.value) {
+                    handleAddCustomTag(input.value)
+                    input.value = ''
                   }
                 }}
               >
-                Añadir
+                + Añadir etiqueta
               </Button>
             </div>
           </div>
+
+          {/* Recomendado */}
           <div className="md:col-span-2 flex items-center gap-3 rounded-[1.2rem] border border-white/80 bg-white/70 px-4 py-3">
             <input
               id="product-is-recommended"
@@ -194,23 +247,12 @@ export default function ProductModal({
               onChange={(event) => setProductForm((prev) => ({ ...prev, isRecommended: event.target.checked }))}
               className="h-4 w-4 rounded border-glowe-pink-accent text-glowe-pink-accent focus:ring-glowe-pink-accent"
             />
-            <label htmlFor="product-is-recommended" className="text-sm font-semibold text-glowe-dark">
+            <label htmlFor="product-is-recommended" className="text-sm font-semibold text-glowe-dark cursor-pointer">
               Mostrar como recomendado cuando el carrito esté vacío
             </label>
           </div>
-          <div className="md:col-span-2">
-            <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
-              Orden recomendado
-            </label>
-            <Input
-              type="number"
-              min="0"
-              value={productForm.recommendedOrder}
-              onChange={(event) => setProductForm((prev) => ({ ...prev, recommendedOrder: event.target.value }))}
-              placeholder="0"
-              className="w-full"
-            />
-          </div>
+
+          {/* Descripción */}
           <div className="md:col-span-2">
             <label className="mb-1.5 block text-[10px] font-bold uppercase tracking-[0.18em] text-glowe-muted">
               Descripción
@@ -219,7 +261,7 @@ export default function ProductModal({
               value={productForm.desc}
               onChange={(event) => setProductForm((prev) => ({ ...prev, desc: event.target.value }))}
               rows="4"
-              className="glass-input min-h-[120px] rounded-[1.5rem] px-4 py-3 text-sm text-glowe-dark placeholder:text-glowe-muted"
+              className="glass-input min-h-[100px] rounded-[1.5rem] px-4 py-3 text-sm text-glowe-dark placeholder:text-glowe-muted"
               placeholder="Describe el beneficio principal del producto"
             />
           </div>
@@ -229,7 +271,7 @@ export default function ProductModal({
           <Button variant="glass" fullWidth type="button" onClick={onClose} className="sm:w-auto">
             Cancelar
           </Button>
-          <Button variant="gradient" fullWidth type="submit" className="sm:w-auto">
+          <Button variant="gradient" fullWidth type="submit" className="sm:w-auto font-bold">
             {isEditing ? 'Guardar cambios' : 'Crear producto'}
           </Button>
         </div>

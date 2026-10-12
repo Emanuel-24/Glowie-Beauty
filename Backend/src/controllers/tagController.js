@@ -1,6 +1,7 @@
 import {
   getAllTags,
   createTagRecord,
+  updateTagRecord,
   deleteTagRecord,
 } from '../services/tagService.js';
 
@@ -27,8 +28,26 @@ export const createTag = async (req, res) => {
     const tag = await createTagRecord({ name, description });
     return sendResponse(res, 201, true, tag, 'Etiqueta creada correctamente');
   } catch (error) {
+    if (error.code === 11000) {
+      return sendResponse(res, 409, false, null, 'Ya existe una etiqueta con este nombre.');
+    }
     const statusCode = error.statusCode || 500;
     return sendResponse(res, statusCode, false, null, error?.message || 'No se pudo crear la etiqueta');
+  }
+};
+
+export const updateTag = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description } = req.body || {};
+    const tag = await updateTagRecord(id, { name, description });
+    return sendResponse(res, 200, true, tag, 'Etiqueta actualizada correctamente');
+  } catch (error) {
+    if (error.code === 11000) {
+      return sendResponse(res, 409, false, null, 'Ya existe una etiqueta con este nombre.');
+    }
+    const statusCode = error.statusCode || 500;
+    return sendResponse(res, statusCode, false, null, error?.message || 'No se pudo actualizar la etiqueta');
   }
 };
 

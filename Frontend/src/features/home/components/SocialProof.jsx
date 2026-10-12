@@ -6,7 +6,7 @@ import { getSiteConfig, defaultSiteConfig } from '@/features/home/services/siteC
 
 export default function SocialProof() {
   const [posts, setPosts] = useState(
-    socialPosts.map((p) => ({ imageUrl: p.image, title: p.user, link: 'https://instagram.com/GloweBeautyCO' }))
+    socialPosts.map((p) => ({ imageUrl: p.image, title: p.user, link: 'https://instagram.com/glowebeautytienda' }))
   )
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export default function SocialProof() {
           <h2 className="font-serif text-3xl font-bold text-glowe-dark">Tu Glowe también vive aquí 📸</h2>
           <p className="text-xs sm:text-sm text-glowe-muted mt-1">
             Etiquétanos en Instagram{' '}
-            <span className="font-bold text-glowe-dark">@GloweBeautyCO</span> para aparecer en nuestro feed.
+            <span className="font-bold text-glowe-dark">@glowebeautytienda</span> para aparecer en nuestro feed.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export default function SocialProof() {
                 <div
                   className="absolute inset-0 bg-glowe-dark/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-bold px-2 text-center"
                 >
-                  {post.title || post.user || '@GloweBeautyCO'}
+                  {post.title || post.user || '@glowebeautytienda'}
                 </div>
               </div>
             )

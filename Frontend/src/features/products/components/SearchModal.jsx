@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { Search, X } from 'lucide-react'
 import { useCart } from '@/features/cart'
 import { useToast } from '@/shared/toast'
 import Button from '@/shared/components/ui/Button'
-import Card from '@/shared/components/ui/Card'
-import Badge from '@/shared/components/ui/Badge'
 import { useProductSearch } from '@/features/products/hooks/useProductSearch'
 
 export default function SearchModal({
@@ -26,15 +25,36 @@ export default function SearchModal({
   useEffect(() => {
     if (!isOpen) return undefined
 
+    const originalBodyOverflow = document.body.style.overflow
+    const originalHtmlOverflow = document.documentElement.style.overflow
+    const originalBodyPaddingRight = document.body.style.paddingRight
+
+    // Compensar la desaparición de la barra de scroll para evitar saltos horizontales
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`
+    }
+
+    // Congelar completamente el scroll de la página detrás de la sombra
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+
     const handleKeyDown = (event) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') onClose?.()
     }
 
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalBodyOverflow
+      document.documentElement.style.overflow = originalHtmlOverflow
+      document.body.style.paddingRight = originalBodyPaddingRight
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [isOpen, onClose])
 
   if (!isOpen) return null
+  if (typeof document === 'undefined') return null
 
   const q = query.trim().toLowerCase()
   const results = q
@@ -58,19 +78,24 @@ export default function SearchModal({
     onClose()
   }
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-4 sm:px-6 sm:pt-16"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Búsqueda de productos"
+      className="fixed inset-0 z-50 flex items-start justify-center p-3 pt-4 sm:px-6 sm:pt-16 overflow-hidden overscroll-none"
+      aria-hidden="false"
     >
+      {/* Sombra de pantalla completa: bloquea interacción y arrastres sobre el fondo */}
       <div
-        className="absolute inset-0 bg-glowe-dark/40 backdrop-blur-sm"
-        onClick={onClose}
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-all touch-none select-none"
         aria-hidden="true"
       />
-      <div className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-white/40 bg-white/70 shadow-xl backdrop-blur-md sm:max-h-[calc(100dvh-4rem)]">
+
+      <div
+        className="relative flex max-h-[calc(100dvh-1.5rem)] w-full max-w-3xl flex-col overflow-hidden rounded-[28px] border border-white/60 bg-white/95 shadow-2xl backdrop-blur-xl sm:max-h-[calc(100dvh-4rem)] touch-auto overscroll-contain"
+        onClick={(event) => event.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Búsqueda de productos"
+      >
         <div className="flex items-center gap-3 border-b border-glowe-pink/30 p-4">
           <Search className="h-5 w-5 text-glowe-pink-accent" />
           <input
@@ -82,15 +107,16 @@ export default function SearchModal({
             className="flex-1 bg-transparent text-sm text-glowe-dark placeholder:text-glowe-muted focus:outline-none"
           />
           <button
+            type="button"
             onClick={onClose}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-glowe-muted hover:bg-white/70 hover:text-glowe-dark"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-bold text-glowe-muted hover:bg-white/70 hover:text-glowe-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-glowe-pink-accent cursor-pointer"
             aria-label="Cerrar búsqueda"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3 sm:p-4 overscroll-contain">
           {results.length === 0 ? (
             <div className="space-y-4 py-8 text-center">
               <p className="text-sm text-glowe-muted">No encontramos resultados para “{query}”.</p>
@@ -139,4 +165,6 @@ export default function SearchModal({
       </div>
     </div>
   )
+
+  return createPortal(modalContent, document.body)
 }

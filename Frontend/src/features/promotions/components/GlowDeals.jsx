@@ -29,14 +29,21 @@ export default function GlowDeals() {
       .then((data) => {
         if (!active) return
         const activeDeals = Array.isArray(data?.deals) ? data.deals : []
-        setDeals(activeDeals)
+        const now = Date.now()
+        // Doble validación estricta de Glow Deals: solo ofertas destacadas con fecha límite futura
+        const strictlyValidDeals = activeDeals.filter((d) => {
+          if (!d.isFeaturedOffer) return false
+          if (!d.offerEndDate) return false
+          const end = new Date(d.offerEndDate).getTime()
+          return !Number.isNaN(end) && end > now
+        })
+        setDeals(strictlyValidDeals)
 
-        // If deals have offerEndDate, sync timer to end date
-        const validDealsWithEndDate = activeDeals.filter((d) => d.offerEndDate)
-        if (validDealsWithEndDate.length > 0) {
-          const endTimes = validDealsWithEndDate.map((d) => new Date(d.offerEndDate).getTime())
-          const commonOrEarliest = Math.min(...endTimes)
-          const diff = Math.floor((commonOrEarliest - Date.now()) / 1000)
+        // Sincronizar temporizador con la fecha de expiración más próxima
+        if (strictlyValidDeals.length > 0) {
+          const endTimes = strictlyValidDeals.map((d) => new Date(d.offerEndDate).getTime())
+          const earliest = Math.min(...endTimes)
+          const diff = Math.floor((earliest - now) / 1000)
           setInitialSeconds(Math.max(0, diff))
         }
       })
@@ -115,11 +122,12 @@ export default function GlowDeals() {
               </Reveal>
 
               <div className={`relative z-10 mt-8 grid gap-4 sm:gap-6 ${gridColsClass}`}>
-                {deals.map((deal) => (
+                {deals.map((deal, idx) => (
                   <Card
                     key={deal.productId}
                     radius="2xl"
-                    className="group p-4 bg-white/90 border-glowe-yellow-dark/60 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
+                    style={{ '--stagger-index': idx }}
+                    className="stagger-item group p-4 bg-white/90 border-glowe-yellow-dark/60 flex flex-col justify-between transition-all duration-300 hover:shadow-lg hover:-translate-y-1"
                   >
                     <Link
                       to={ROUTES.PRODUCT_DETAIL(deal.productId)}

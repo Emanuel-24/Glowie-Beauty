@@ -61,6 +61,7 @@ export const emptyProductForm = {
   price: '',
   stock: '12',
   image: '',
+  images: [],
   badge: 'Nuevo',
   desc: '',
   tags: [],
@@ -104,14 +105,17 @@ export const emptyBundleForm = {
 }
 
 export const navItems = [
-  { id: 'dashboard', label: 'Dashboard', emoji: '◈' },
-  { id: 'categories', label: 'Categoría de productos', emoji: '▣' },
-  { id: 'tags', label: 'Etiquetas / Tags', emoji: '🏷️' },
-  { id: 'products', label: 'Productos', emoji: '◌' },
-  { id: 'bundles', label: 'Combos y Kits', emoji: '🎁' },
-  { id: 'offers', label: 'Ofertas y Descuentos', emoji: '⚡' },
-  { id: 'orders', label: 'Compras', emoji: '◎' },
-  { id: 'payments', label: 'Pagos y abonos', emoji: '◐' },
-  { id: 'users', label: 'Usuarios', emoji: '◍' },
-  { id: 'siteConfig', label: 'Configuración Web', emoji: '⚙️' },
+  { id: 'dashboard', label: 'Dashboard', iconName: 'LayoutDashboard' },
+  { id: 'incomingOrders', label: 'Pedidos', iconName: 'Inbox' },
+  { id: 'orders', label: 'Ventas', iconName: 'ShoppingBag' },
+  { id: 'categories', label: 'Categoría de productos', iconName: 'Layers' },
+  { id: 'tags', label: 'Etiquetas / Tags', iconName: 'Tag' },
+  { id: 'products', label: 'Productos', iconName: 'Package' },
+  { id: 'bundles', label: 'Combos y Kits', iconName: 'Gift' },
+  { id: 'offers', label: 'Ofertas y Descuentos', iconName: 'Zap' },
+  { id: 'payments', label: 'Pagos y abonos', iconName: 'CreditCard' },
+  { id: 'users', label: 'Usuarios', iconName: 'Users' },
+  { id: 'roles', label: 'Roles y Permisos', iconName: 'ShieldCheck' },
+  { id: 'siteConfig', label: 'Configuración Web', iconName: 'Settings' },
 ]
+
